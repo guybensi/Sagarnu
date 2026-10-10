@@ -6,3 +6,4 @@ export * from "./schedule";
 export * from "./pricing";
 export * from "./countdown";
 export * from "./balances";
+export * from "./categories";

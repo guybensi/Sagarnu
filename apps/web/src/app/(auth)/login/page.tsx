@@ -1,0 +1,94 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signInSchema, type SignInInput } from "@sagarnu/schemas";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { authErrorMessage, GoogleButton } from "@/components/auth/shared";
+import { Button } from "@/components/ui/button";
+import { Checkbox, Field, Input } from "@/components/ui/form";
+import { authClient } from "@/lib/auth-client";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [unverified, setUnverified] = useState(false);
+  const form = useForm<SignInInput>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: { email: "", password: "", rememberMe: true },
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    setError("");
+    const { error } = await authClient.signIn.email(values);
+    if (error) {
+      setUnverified(error.code === "EMAIL_NOT_VERIFIED");
+      return setError(authErrorMessage(error));
+    }
+    router.replace("/");
+  });
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+      <div>
+        <h1 className="text-2xl font-bold">התחברות</h1>
+        <p className="mt-1 text-sm text-muted">טוב לראות אותך שוב</p>
+      </div>
+
+      <GoogleButton />
+
+      <Field label="אימייל" htmlFor="email" error={form.formState.errors.email && "אימייל לא תקין"}>
+        <Input id="email" type="email" dir="ltr" autoComplete="email" {...form.register("email")} />
+      </Field>
+      <Field label="סיסמה" htmlFor="password" error={form.formState.errors.password && "שדה חובה"}>
+        <Input
+          id="password"
+          type="password"
+          dir="ltr"
+          autoComplete="current-password"
+          {...form.register("password")}
+        />
+      </Field>
+
+      <div className="flex items-center justify-between">
+        <Controller
+          control={form.control}
+          name="rememberMe"
+          render={({ field }) => (
+            <Checkbox checked={field.value} onChange={field.onChange} label="השאר אותי מחובר" />
+          )}
+        />
+        <Link href="/forgot-password" className="text-sm text-brand-600 hover:underline">
+          שכחתי סיסמה
+        </Link>
+      </div>
+
+      {error && (
+        <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          {error}
+          {unverified && (
+            <Link
+              className="ms-2 font-medium underline"
+              href={`/verify-email?email=${encodeURIComponent(form.getValues("email"))}`}
+            >
+              שליחה חוזרת
+            </Link>
+          )}
+        </div>
+      )}
+
+      <Button type="submit" size="lg" loading={form.formState.isSubmitting}>
+        התחברות
+      </Button>
+
+      <p className="text-center text-sm text-muted">
+        אין לך חשבון?{" "}
+        <Link href="/signup" className="font-medium text-brand-600 hover:underline">
+          הרשמה
+        </Link>
+      </p>
+    </form>
+  );
+}

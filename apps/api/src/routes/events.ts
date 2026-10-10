@@ -78,15 +78,13 @@ export async function eventRoutes(app: FastifyInstance): Promise<void> {
         const relevant = new Set(relevantCategoryKeys);
         const system = await tx.select().from(category).where(isNull(category.eventId));
         if (system.length > 0) {
-          await tx
-            .insert(eventCategorySetting)
-            .values(
-              system.map((c) => ({
-                eventId: row.id,
-                categoryId: c.id,
-                isRelevant: relevant.has(c.key ?? ""),
-              })),
-            );
+          await tx.insert(eventCategorySetting).values(
+            system.map((c) => ({
+              eventId: row.id,
+              categoryId: c.id,
+              isRelevant: relevant.has(c.key ?? ""),
+            })),
+          );
         }
       }
       await tx.update(user).set({ defaultEventId: row.id }).where(eq(user.id, me.id));

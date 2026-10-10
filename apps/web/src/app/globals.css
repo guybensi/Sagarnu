@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-heebo), system-ui, sans-serif;
+
+  --color-canvas: #faf7f4;
+  --color-surface: #ffffff;
+  --color-ink: #2b2622;
+  --color-muted: #7d736b;
+  --color-line: #ebe4dd;
+  --color-soft: #f3ede7;
+
+  --color-brand-50: #fbf1f4;
+  --color-brand-100: #f6dfe6;
+  --color-brand-200: #edbccb;
+  --color-brand-500: #b5476a;
+  --color-brand-600: #9c3a5a;
+  --color-brand-700: #7f2f49;
+
+  --color-gold: #c9a227;
+  --color-success: #2f855a;
+  --color-success-soft: #e6f4ec;
+  --color-warning: #b7791f;
+  --color-warning-soft: #fdf3e1;
+  --color-danger: #c53030;
+  --color-danger-soft: #fde8e8;
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(43 38 34 / 0.04), 0 4px 16px rgb(43 38 34 / 0.05);
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers (amounts, dates) read left-to-right inside RTL text. */
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
