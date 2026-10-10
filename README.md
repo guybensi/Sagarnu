@@ -22,7 +22,7 @@ cp apps/api/.env.example apps/api/.env   # fill BETTER_AUTH_SECRET
 pnpm dev                                  # web :3000, api :8080
 ```
 
-No Docker or Postgres install needed locally — the API uses embedded PGlite (`DATABASE_URL=pglite:./.data/dev`).
+No Docker or Postgres install needed locally — the API uses embedded PGlite (`DATABASE_URL=pglite:local`), stored in the user app-data folder (`%LOCALAPPDATA%\sagarnu\pglite-dev` on Windows) because sync clients like OneDrive corrupt a database kept inside the project.
 
 ## Layout
 

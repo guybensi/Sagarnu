@@ -1,7 +1,6 @@
-import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDb, seed } from "@sagarnu/db";
+import { createDb, pgliteTarget, seed } from "@sagarnu/db";
 import { createEmailProvider } from "@sagarnu/notifications";
 import { buildApp } from "./app";
 import { loadEnv } from "./env";
@@ -11,8 +10,12 @@ const env = loadEnv();
 // Same depth from src/server.ts (dev) and dist/server.js (build): apps/api/<dir>/ → repo root.
 const migrationsFolder = fileURLToPath(new URL("../../../packages/db/drizzle", import.meta.url));
 
-if (env.DATABASE_URL.startsWith("pglite:") && env.DATABASE_URL !== "pglite:memory") {
-  mkdirSync(dirname(resolve(env.DATABASE_URL.slice("pglite:".length))), { recursive: true });
+const pgliteDir = env.DATABASE_URL.startsWith("pglite:") ? pgliteTarget(env.DATABASE_URL) : undefined;
+if (pgliteDir && /onedrive|dropbox|google ?drive|icloud/i.test(resolve(pgliteDir))) {
+  console.warn(
+    `\n⚠ The local database is inside a synced folder (${resolve(pgliteDir)}).\n` +
+      `  Sync clients break it. Use DATABASE_URL=pglite:local in apps/api/.env.\n`,
+  );
 }
 
 const handle = createDb(env.DATABASE_URL);
@@ -21,11 +24,9 @@ if (env.MIGRATE_ON_START) {
     await handle.migrate(migrationsFolder);
     await seed(handle.db);
   } catch (error) {
-    if (env.DATABASE_URL.startsWith("pglite:")) {
-      // A force-killed dev server can leave the embedded database unreadable.
-      const dir = resolve(env.DATABASE_URL.slice("pglite:".length));
+    if (pgliteDir) {
       console.error(
-        `\nThe local database at ${dir} could not be opened (usually after the server was force-closed).\n` +
+        `\nThe local database at ${resolve(pgliteDir)} could not be opened.\n` +
           `Delete that folder and start again — it only holds local test data.\n`,
       );
     }

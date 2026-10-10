@@ -12,7 +12,7 @@ describe("env", () => {
       RESEND_API_KEY: "",
     });
     expect(env.requireEmailVerification).toBe(false);
-    expect(env.DATABASE_URL).toBe("pglite:./.data/dev");
+    expect(env.DATABASE_URL).toBe("pglite:local");
   });
 
   it("turns verification on when email is configured", () => {

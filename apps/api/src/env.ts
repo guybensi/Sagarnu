@@ -6,8 +6,8 @@ const schema = z.object({
   // Production unless the local .env says otherwise — never pretty-print or relax checks by accident.
   NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
   PORT: z.coerce.number().int().default(8080),
-  /** `postgresql://…` (Railway) or `pglite:./.data/dev` for an embedded local database. */
-  DATABASE_URL: z.string().default("pglite:./.data/dev"),
+  /** `postgresql://…` (Railway) or `pglite:local` for an embedded database in the user app-data folder. */
+  DATABASE_URL: z.string().default("pglite:local"),
   /** Public origin of the web app. Auth runs under it via the Next.js `/v1` proxy. */
   WEB_ORIGIN: z.url().default("http://localhost:3000"),
   BETTER_AUTH_SECRET: z.string().min(32),
