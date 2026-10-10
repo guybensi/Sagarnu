@@ -47,6 +47,26 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Thin, always-visible horizontal scrollbar for tab rows (ScrollRow). */
+.scroll-row {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand-200) transparent;
+}
+.scroll-row::-webkit-scrollbar {
+  height: 6px;
+}
+.scroll-row::-webkit-scrollbar-track {
+  background: var(--color-soft);
+  border-radius: 9999px;
+}
+.scroll-row::-webkit-scrollbar-thumb {
+  background: var(--color-brand-200);
+  border-radius: 9999px;
+}
+.scroll-row::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-500);
+}
+
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;

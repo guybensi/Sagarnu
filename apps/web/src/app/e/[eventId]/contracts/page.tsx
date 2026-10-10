@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge, Card, EmptyState, Spinner } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/form";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { cn } from "@/lib/cn";
 import { messageOf, toastError } from "@/lib/errors";
 import { useCan, useEventId } from "@/lib/use-event-id";
@@ -150,10 +151,11 @@ function ContractsView() {
         )}
       </div>
 
-      <div className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+      <ScrollRow className="mb-6" activeKey={tab}>
         {tabs.map((t) => (
           <button
             key={t.id}
+            aria-current={tab === t.id}
             onClick={() => setTab(t.id)}
             className={cn(
               "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm transition-colors",
@@ -184,7 +186,7 @@ function ContractsView() {
             קטגוריה
           </button>
         )}
-      </div>
+      </ScrollRow>
 
       {list.length === 0 ? (
         <EmptyState
