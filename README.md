@@ -2,7 +2,17 @@
 
 Sagarnu – Wedding budget manager for couples and planners: AI-powered vendor contract analysis, payment tracking, and automatic WhatsApp &amp; email reminders. Hebrew/RTL.
 
+**Live:** https://sagarnu-bay.vercel.app
+
 **Setup & deployment (Hebrew, step by step): [SETUP.txt](SETUP.txt)** · Plan: [docs/PLAN.txt](docs/PLAN.txt)
+
+## Deployment
+
+| Service | Where                                                             | Notes                                                                                 |
+| ------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Web     | Vercel — [sagarnu-bay.vercel.app](https://sagarnu-bay.vercel.app) | Root directory `apps/web`; env `API_URL` = the Railway API URL                        |
+| API     | Railway (config: `apps/api/railway.json`)                         | env `WEB_ORIGIN=https://sagarnu-bay.vercel.app`, `DATABASE_URL`, `BETTER_AUTH_SECRET` |
+| DB      | Railway Postgres                                                  | `DATABASE_URL=${{Postgres.DATABASE_URL}}`; migrations run on API boot                 |
 
 ## Quick start
 
