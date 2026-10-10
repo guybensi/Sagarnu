@@ -6,7 +6,11 @@ export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message
 export const agorot = z.number().int().nonnegative().max(1_000_000_000_00);
 export const positiveAgorot = agorot.refine((v) => v > 0, { message: "must_be_positive" });
 /** Only http(s) links — user-entered URLs are rendered as links, never fetched by the server. */
-export const httpUrl = z.url({ protocol: /^https?$/ }).max(2048);
+export const httpUrl = z
+  .url({ protocol: /^https?$/ })
+  .max(2048)
+  // A host needs a dot and no spaces ("https://band co il" parses, but is not a working link).
+  .refine((v) => !/\s/.test(v) && /^https?:\/\/[^/?#]+\.[^/?#]+/i.test(v), { message: "invalid_url" });
 export const id = z.uuid();
 
 const trimmed = (max: number) => z.string().trim().min(1).max(max);

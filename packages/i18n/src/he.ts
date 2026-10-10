@@ -88,6 +88,7 @@ export const he = {
     must_be_positive: "הסכום חייב להיות גדול מ-0",
     required: "שדה חובה",
     invalid_image: "קובץ התמונה לא נתמך",
+    invalid_url: "קישור לא תקין",
   },
 } as const;
 

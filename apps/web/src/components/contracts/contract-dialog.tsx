@@ -17,8 +17,9 @@ import {
   type ContractDetailDto,
   type ScheduleItemInput,
 } from "@sagarnu/schemas";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import type { ZodError } from "zod";
 import { toast } from "sonner";
 import { Chips } from "@/components/event/event-fields";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,12 @@ function initialState(contract: ContractDetailDto | null, categoryId: string): F
 }
 
 const orNull = (s: string) => (s.trim() === "" ? null : s.trim());
+/** People type "www.vendor.co.il"; links are always stored with a scheme. */
+const urlOrNull = (s: string): string | null => {
+  const t = s.trim();
+  if (!t) return null;
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+};
 const lines = (s: string) =>
   s
     .split("\n")
@@ -133,6 +140,75 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+/** Field → [Hebrew name, id of the input to focus]. */
+const FIELD_INFO: Record<string, [string, string]> = {
+  vendorName: ["שם הספק", "vendorName"],
+  categoryId: ["קטגוריה", "categoryId"],
+  vendorContactName: ["איש קשר", "vendorContactName"],
+  vendorPhone: ["טלפון", "vendorPhone"],
+  vendorEmail: ["אימייל הספק", "vendorEmail"],
+  vendorBusinessId: ["ח.פ / ע.מ", "vendorName"],
+  websiteUrl: ["אתר", "websiteUrl"],
+  instagramUrl: ["אינסטגרם", "instagramUrl"],
+  facebookUrl: ["פייסבוק", "facebookUrl"],
+  contractUrl: ["קישור לחוזה", "contractUrl"],
+  totalAmountAgorot: ["סכום כולל", "total"],
+  perGuestPriceAgorot: ["מחיר למנה", "perGuest"],
+  minGuests: ["מינימום מנות", "minGuests"],
+  vatMode: ["מע״מ", "vat"],
+  signedOn: ["תאריך חתימה", "signedOn"],
+  includedItems: ["מה כלול", "included"],
+  excludedItems: ["מה לא כלול", "excluded"],
+  cancellationPolicy: ["מדיניות ביטול", "cancellation"],
+  notes: ["הערות", "contractNotes"],
+};
+
+const SCHEDULE_FIELD: Record<string, [string, string]> = {
+  label: ["שם", "label"],
+  amountAgorot: ["סכום", "amount"],
+  percent: ["אחוז", "percent"],
+  dueDate: ["תאריך", "date"],
+  relativeDays: ["מספר ימים", "days"],
+};
+
+interface FormIssue {
+  key: string;
+  label: string;
+  targetId: string;
+}
+
+/**
+ * Turns validation paths (`vendorEmail`, `schedule.1.amountAgorot`) into named, clickable issues.
+ * `rowKeys[i]` is the form row behind schedule item i (empty rows are not sent, so indices shift).
+ */
+function describeIssues(paths: string[], rowKeys: number[], allRowKeys: number[]): FormIssue[] {
+  const out = new Map<string, FormIssue>();
+  for (const path of paths) {
+    const [head = path, index, field] = path.split(".");
+    if (head === "schedule" && index !== undefined) {
+      const rowKey = rowKeys[Number(index)] ?? -1;
+      const position = allRowKeys.indexOf(rowKey) + 1 || Number(index) + 1;
+      const [fieldName, suffix] = SCHEDULE_FIELD[field ?? ""] ?? ["פרטים", "label"];
+      const key = `schedule.${rowKey}.${suffix}`;
+      out.set(key, {
+        key,
+        label: `מועד תשלום ${position}: ${fieldName}`,
+        targetId: `schedule-${rowKey}-${suffix}`,
+      });
+    } else {
+      const [label, targetId] = FIELD_INFO[head] ?? [head, "vendorName"];
+      out.set(head, { key: head, label, targetId });
+    }
+  }
+  return [...out.values()];
+}
+
+function focusField(id: string) {
+  const el = document.getElementById(id);
+  el?.scrollIntoView({ block: "center", behavior: "smooth" });
+  el?.focus({ preventScroll: true });
+}
+
 export function ContractDialog({
   eventId,
   contract,
@@ -153,6 +229,8 @@ export function ContractDialog({
   const refresh = useRefreshEvent(eventId);
   const [form, setForm] = useState<FormState>(() => initialState(contract, defaultCategoryId ?? ""));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [issues, setIssues] = useState<FormIssue[]>([]);
+  const invalid = new Set(issues.map((i) => i.key));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -160,6 +238,7 @@ export function ContractDialog({
       const fallback = defaultCategoryId ?? categories.data?.find((c) => c.isRelevant)?.id ?? "";
       setForm(initialState(contract, fallback));
       setErrors({});
+      setIssues([]);
     }
   }, [open, contract, defaultCategoryId, categories.data]);
 
@@ -184,10 +263,10 @@ export function ContractDialog({
     vendorPhone: orNull(form.vendorPhone),
     vendorEmail: orNull(form.vendorEmail),
     vendorBusinessId: orNull(form.vendorBusinessId),
-    websiteUrl: orNull(form.websiteUrl),
-    facebookUrl: orNull(form.facebookUrl),
-    instagramUrl: orNull(form.instagramUrl),
-    contractUrl: orNull(form.contractUrl),
+    websiteUrl: urlOrNull(form.websiteUrl),
+    facebookUrl: urlOrNull(form.facebookUrl),
+    instagramUrl: urlOrNull(form.instagramUrl),
+    contractUrl: urlOrNull(form.contractUrl),
     pricingType: form.pricingType,
     totalAmountAgorot: form.totalAmountAgorot,
     vatMode: form.vatMode,
@@ -201,28 +280,56 @@ export function ContractDialog({
   });
 
   const save = async () => {
+    // Rows the user left completely empty are skipped, so remember which form row each item came from.
+    const sentRows = form.schedule.filter(
+      (r) => r.amountAgorot != null || r.percent != null || r.dueDate || r.days != null,
+    );
+    const rowKeys = sentRows.map((r) => r.key);
+    const allRowKeys = form.schedule.map((r) => r.key);
+    const fail = (error: ZodError) => {
+      setErrors(fieldErrors(error));
+      setIssues(
+        describeIssues(
+          error.issues.map((i) => i.path.join(".")),
+          rowKeys,
+          allRowKeys,
+        ),
+      );
+    };
+
     setSaving(true);
     try {
       let saved: ContractDetailDto;
       if (contract) {
         const parsed = updateContractSchema.safeParse({ ...fields(), version: contract.version });
-        if (!parsed.success) return setErrors(fieldErrors(parsed.error));
+        if (!parsed.success) return fail(parsed.error);
         saved = await endpoints.contracts.update(eventId, contract.id, parsed.data);
       } else {
-        const schedule = form.schedule
-          .filter((r) => r.amountAgorot != null || r.percent != null || r.dueDate || r.days != null)
-          .map(toScheduleInput);
-        const parsed = createContractSchema.safeParse({ ...fields(), status: form.status, schedule });
-        if (!parsed.success) return setErrors(fieldErrors(parsed.error));
+        const parsed = createContractSchema.safeParse({
+          ...fields(),
+          status: form.status,
+          schedule: sentRows.map(toScheduleInput),
+        });
+        if (!parsed.success) return fail(parsed.error);
         saved = await endpoints.contracts.create(eventId, parsed.data);
       }
       setErrors({});
+      setIssues([]);
       await refresh();
       toast.success(contract ? "החוזה עודכן" : "החוזה נשמר");
       onOpenChange(false);
       onSaved?.(saved);
     } catch (e) {
       if (e instanceof ApiRequestError && e.code === "version_conflict") await refresh();
+      if (e instanceof ApiRequestError && e.code === "validation_failed") {
+        // The server has the final say (e.g. a category that was deleted meanwhile).
+        const paths = [
+          ...Object.keys(e.fields ?? {}),
+          ...(e.details?.field ? [String(e.details.field)] : []),
+        ];
+        setIssues(describeIssues(paths, rowKeys, allRowKeys));
+        return;
+      }
       toastError(e);
     } finally {
       setSaving(false);
@@ -239,6 +346,32 @@ export function ContractDialog({
       title={contract ? `עריכת חוזה · ${contract.vendorName}` : "חוזה חדש"}
       footer={
         <>
+          {issues.length > 0 && (
+            <div
+              role="alert"
+              className="flex w-full items-start gap-2 rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger sm:me-auto sm:w-auto sm:max-w-md"
+            >
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              <div>
+                <p className="font-medium">
+                  {issues.length === 1 ? "צריך לתקן שדה אחד:" : `צריך לתקן ${issues.length} שדות:`}
+                </p>
+                <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                  {issues.map((issue) => (
+                    <li key={issue.key}>
+                      <button
+                        type="button"
+                        onClick={() => focusField(issue.targetId)}
+                        className="underline underline-offset-2 hover:text-ink"
+                      >
+                        {issue.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             ביטול
           </Button>
@@ -442,6 +575,8 @@ export function ContractDialog({
                 <div key={row.key} className="grid gap-3 rounded-2xl border border-line p-4">
                   <div className="flex gap-3">
                     <Input
+                      id={`schedule-${row.key}-label`}
+                      aria-invalid={invalid.has(`schedule.${row.key}.label`) || undefined}
                       value={row.label}
                       onChange={(e) => setRow(row.key, { label: e.target.value })}
                       placeholder="שם התשלום"
@@ -472,12 +607,16 @@ export function ContractDialog({
                       </Select>
                       {row.mode === "amount" ? (
                         <MoneyInput
+                          id={`schedule-${row.key}-amount`}
+                          invalid={invalid.has(`schedule.${row.key}.amount`)}
                           value={row.amountAgorot}
                           onChange={(v) => setRow(row.key, { amountAgorot: v })}
                         />
                       ) : (
                         <div className="relative min-w-0 flex-1">
                           <Input
+                            id={`schedule-${row.key}-percent`}
+                            aria-invalid={invalid.has(`schedule.${row.key}.percent`) || undefined}
                             type="number"
                             dir="ltr"
                             min={0}
@@ -506,6 +645,8 @@ export function ContractDialog({
                       </Select>
                       {row.timing === "date" ? (
                         <Input
+                          id={`schedule-${row.key}-date`}
+                          aria-invalid={invalid.has(`schedule.${row.key}.date`) || undefined}
                           className="min-w-0"
                           type="date"
                           value={row.dueDate}
@@ -513,6 +654,8 @@ export function ContractDialog({
                         />
                       ) : (
                         <Input
+                          id={`schedule-${row.key}-days`}
+                          aria-invalid={invalid.has(`schedule.${row.key}.days`) || undefined}
                           type="number"
                           dir="ltr"
                           min={0}

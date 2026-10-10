@@ -43,6 +43,9 @@ describe("contract input", () => {
 
   it("only accepts http(s) links", () => {
     expect(createContractSchema.safeParse({ ...base, websiteUrl: "https://a.co.il" }).success).toBe(true);
+    for (const bad of ["https://band co il", "https://localhost", "ftp://a.co.il"]) {
+      expect(createContractSchema.safeParse({ ...base, websiteUrl: bad }).success).toBe(false);
+    }
     expect(createContractSchema.safeParse({ ...base, websiteUrl: "javascript:alert(1)" }).success).toBe(
       false,
     );
