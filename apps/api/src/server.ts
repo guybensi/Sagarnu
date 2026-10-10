@@ -17,8 +17,20 @@ if (env.DATABASE_URL.startsWith("pglite:") && env.DATABASE_URL !== "pglite:memor
 
 const handle = createDb(env.DATABASE_URL);
 if (env.MIGRATE_ON_START) {
-  await handle.migrate(migrationsFolder);
-  await seed(handle.db);
+  try {
+    await handle.migrate(migrationsFolder);
+    await seed(handle.db);
+  } catch (error) {
+    if (env.DATABASE_URL.startsWith("pglite:")) {
+      // A force-killed dev server can leave the embedded database unreadable.
+      const dir = resolve(env.DATABASE_URL.slice("pglite:".length));
+      console.error(
+        `\nThe local database at ${dir} could not be opened (usually after the server was force-closed).\n` +
+          `Delete that folder and start again — it only holds local test data.\n`,
+      );
+    }
+    throw error;
+  }
 }
 
 const app = await buildApp(
