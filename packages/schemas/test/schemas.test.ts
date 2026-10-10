@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createContractSchema, failedPasswordRules, paymentSchema, signUpSchema } from "../src";
+import {
+  createContractSchema,
+  failedPasswordRules,
+  paymentSchema,
+  signUpSchema,
+  updateContractSchema,
+} from "../src";
 
 describe("password policy", () => {
   it.each([
@@ -29,6 +35,10 @@ describe("contract input", () => {
   it("applies defaults", () => {
     const parsed = createContractSchema.parse(base);
     expect(parsed).toMatchObject({ vatMode: "unknown", pricingType: "fixed", schedule: [] });
+  });
+
+  it("does not fill defaults on update", () => {
+    expect(updateContractSchema.parse({ version: 1, notes: "x" })).toEqual({ version: 1, notes: "x" });
   });
 
   it("only accepts http(s) links", () => {

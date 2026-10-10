@@ -1,0 +1,17 @@
+{
+  "name": "@sagarnu/notifications",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@sagarnu/config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "~6.0.3"
+  }
+}

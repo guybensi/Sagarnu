@@ -1,0 +1,68 @@
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import type { Db } from "@sagarnu/db";
+import type { EmailProvider } from "@sagarnu/notifications";
+import Fastify, { type FastifyServerOptions } from "fastify";
+import { createAuth } from "./auth";
+import type { Env } from "./env";
+import { requireUser } from "./lib/context";
+import { registerErrorHandler } from "./lib/errors";
+import { contractRoutes } from "./routes/contracts";
+import { eventRoutes } from "./routes/events";
+import { meRoutes } from "./routes/me";
+
+export interface AppDeps {
+  env: Env;
+  db: Db;
+  email: EmailProvider;
+}
+
+export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerOptions = {}) {
+  const app = Fastify({ trustProxy: true, bodyLimit: 1024 * 1024, ...opts });
+  const auth = createAuth(env, db, email);
+  app.decorate("ctx", { env, db, auth });
+  app.decorateRequest("user", null);
+  registerErrorHandler(app);
+
+  await app.register(helmet, { contentSecurityPolicy: false });
+  await app.register(cors, { origin: [env.WEB_ORIGIN], credentials: true });
+  await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+
+  app.get("/v1/health", async () => ({ ok: true }));
+
+  // Better Auth handles everything under /v1/auth (sign-in, sign-up, OAuth callbacks, reset, verify).
+  app.route({
+    method: ["GET", "POST"],
+    url: "/v1/auth/*",
+    config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+    async handler(req, reply) {
+      const headers = new Headers();
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (value !== undefined) headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+      }
+      const response = await auth.handler(
+        new Request(new URL(req.url, env.WEB_ORIGIN), {
+          method: req.method,
+          headers,
+          body: req.method === "GET" || req.body == null ? undefined : JSON.stringify(req.body),
+        }),
+      );
+      reply.status(response.status);
+      for (const cookie of response.headers.getSetCookie()) reply.header("set-cookie", cookie);
+      response.headers.forEach((value, key) => {
+        if (key !== "set-cookie") reply.header(key, value);
+      });
+      return reply.send(response.body ? await response.text() : null);
+    },
+  });
+
+  await app.register(async (protectedApp) => {
+    protectedApp.addHook("preHandler", requireUser);
+    await protectedApp.register(meRoutes);
+    await protectedApp.register(eventRoutes);
+    await protectedApp.register(contractRoutes);
+  });
+
+  return app;
+}

@@ -21,15 +21,23 @@ const contractFields = {
   instagramUrl: nullable(httpUrl),
   contractUrl: nullable(httpUrl),
   totalAmountAgorot: nullable(agorot),
-  vatMode: z.enum(VAT_MODES).default("unknown"),
-  pricingType: z.enum(PRICING_TYPES).default("fixed"),
+  vatMode: z.enum(VAT_MODES),
+  pricingType: z.enum(PRICING_TYPES),
   perGuestPriceAgorot: nullable(agorot),
   minGuests: nullable(z.number().int().min(0).max(5000)),
-  includedItems: z.array(z.string().trim().min(1).max(200)).max(50).default([]),
-  excludedItems: z.array(z.string().trim().min(1).max(200)).max(50).default([]),
+  includedItems: z.array(z.string().trim().min(1).max(200)).max(50),
+  excludedItems: z.array(z.string().trim().min(1).max(200)).max(50),
   cancellationPolicy: nullable(longText),
   notes: nullable(longText),
   signedOn: nullable(isoDate),
+};
+
+/** Defaults only apply on create — a PATCH must never reset omitted fields. */
+const createDefaults = {
+  vatMode: contractFields.vatMode.default("unknown"),
+  pricingType: contractFields.pricingType.default("fixed"),
+  includedItems: contractFields.includedItems.default([]),
+  excludedItems: contractFields.excludedItems.default([]),
 };
 
 export const scheduleItemSchema = z
@@ -40,6 +48,8 @@ export const scheduleItemSchema = z
     dueDate: nullable(isoDate),
     relativeAnchor: nullable(z.enum(RELATIVE_ANCHORS)),
     relativeDays: nullable(z.number().int().min(-3650).max(3650)),
+    /** `next_payment_prompt` when created from the "when is the next payment?" dialog. */
+    source: z.enum(["manual", "next_payment_prompt"]).optional(),
   })
   .refine((v) => v.relativeAnchor == null || v.relativeDays != null, {
     path: ["relativeDays"],
@@ -59,12 +69,15 @@ export const updateScheduleItemSchema = z.object({
 
 export const createContractSchema = z.object({
   ...contractFields,
+  ...createDefaults,
   schedule: z.array(scheduleItemSchema).max(24).default([]),
 });
 export type CreateContractInput = z.input<typeof createContractSchema>;
 
+/** Status changes go through `changeContractStatusSchema` because they have side effects. */
 export const updateContractSchema = z
   .object(contractFields)
+  .omit({ status: true })
   .partial()
   .extend({
     /** Optimistic locking: the version the client last saw. */
