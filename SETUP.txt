@@ -1,0 +1,186 @@
+=====================================================================
+  סגרנו (Sagarnu) – הוראות הקמה, צעד אחרי צעד
+=====================================================================
+
+מה יש עכשיו בקוד
+----------------
+- אתר (apps/web) – Next.js, עברית RTL, מובייל ודסקטופ.
+- שרת (apps/api) – Fastify + Better Auth, כל הלוגיקה וההרשאות.
+- מסך הרשמה/התחברות, שאלון פתיחה, דשבורד, חוזים, הוצאות ותשלומים, פרטי אירוע.
+- מה עוד אין: ניתוח חוזים ב-AI (Groq), תזכורות (מייל/וואטסאפ), הזמנת שותפים.
+
+איך זה מחובר
+-------------
+  הדפדפן ──► Vercel (האתר) ──/v1/*──► Railway (ה-API) ──► Postgres ב-Railway
+
+הדפדפן מדבר רק עם הכתובת של Vercel. Vercel מעביר את /v1/* ל-Railway.
+ככה ההתחברות (cookies) עובדת גם בלי דומיין משלכם.
+
+סדר הפעולות חשוב: קודם Railway, אחר כך Vercel, ואז חוזרים ל-Railway לעדכן כתובת.
+
+
+=====================================================================
+  חלק א' – הרצה על המחשב (לא חובה, אבל מומלץ לפני ההעלאה)
+=====================================================================
+
+Node.js 24 ו-pnpm כבר מותקנים על המחשב הזה.
+
+1. פותחים טרמינל בתיקיית הפרויקט ומריצים:
+     pnpm install
+
+2. יוצרים את קובץ ההגדרות של השרת:
+   מעתיקים את apps/api/.env.example לקובץ חדש בשם apps/api/.env
+   וממלאים BETTER_AUTH_SECRET. מחרוזת אקראית מקבלים ככה:
+     node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+   (על המחשב הזה כבר יצרתי apps/api/.env מוכן.)
+
+3. מריצים את הכול:
+     pnpm dev
+
+4. נכנסים ל-http://localhost:3000 ונרשמים.
+
+הערות:
+- לא צריך Docker ולא צריך להתקין Postgres. מקומית רץ Postgres מובנה (PGlite),
+  והנתונים נשמרים בתיקייה apps/api/.data. כדי להתחיל מאפס מוחקים את התיקייה.
+- בלי מפתח Resend, מיילים (אימות, איפוס סיסמה) לא נשלחים. הם מודפסים בטרמינל,
+  כולל הקישור, ואפשר להעתיק אותו לדפדפן.
+
+
+=====================================================================
+  חלק ב' – העלאה לאוויר
+=====================================================================
+
+שלב 1: GitHub
+-------------
+הקוד כבר נמצא ב- https://github.com/guybensi/Sagarnu (ענף main).
+Railway ו-Vercel מתחברים ישירות לשם, וכל push מעלה גרסה חדשה אוטומטית.
+
+
+שלב 2: Railway – מסד נתונים + השרת (API)
+----------------------------------------
+1. נרשמים ב- https://railway.com (כניסה עם GitHub).
+   תוכנית Hobby עולה $5 לחודש וכוללת את השימוש הבסיסי.
+
+2. New Project ← Deploy from GitHub repo ← בוחרים את Sagarnu.
+   (אם הוא לא מופיע: Configure GitHub App ונותנים גישה לריפו.)
+   נוצר שירות. ה-build הראשון ייכשל כי עוד אין משתנים. זה בסדר.
+
+3. מוסיפים מסד נתונים: בתוך הפרויקט לוחצים + Create ← Database ← PostgreSQL.
+
+4. נכנסים לשירות של הקוד (לא ל-Postgres) ← Settings:
+   - Root Directory: משאירים ריק (חשוב! הקוד הוא monorepo).
+   - Config as code / Railway Config File: כותבים  /apps/api/railway.json
+     (שם מוגדרים פקודות ה-build וה-start ובדיקת התקינות.)
+   - Networking ← Generate Domain. מעתיקים את הכתובת שנוצרה,
+     למשל https://sagarnu-production.up.railway.app
+
+5. באותו שירות ← Variables ← מוסיפים:
+     BETTER_AUTH_SECRET = מחרוזת אקראית חדשה (לא אותה של המחשב!)
+     DATABASE_URL       = ${{Postgres.DATABASE_URL}}
+     WEB_ORIGIN         = https://example.com    ← זמני, נעדכן בשלב 4
+   (DATABASE_URL כותבים בדיוק ככה, עם הסוגריים. Railway ממלא את הערך האמיתי.)
+   לא מגדירים NODE_ENV.
+
+6. Deploy. כשהוא ירוק, בודקים בדפדפן:
+     https://<הכתובת-של-railway>/v1/health
+   אמור להופיע: {"ok":true}
+   הטבלאות והקטגוריות נוצרות אוטומטית בעלייה הראשונה.
+
+
+שלב 3: Vercel – האתר
+--------------------
+1. נרשמים ב- https://vercel.com (כניסה עם GitHub).
+   הערה: Hobby (חינם) מיועד לשימוש לא מסחרי. כשיש הכנסות עוברים ל-Pro ($20 לחודש).
+
+2. Add New ← Project ← Import את Sagarnu.
+
+3. בהגדרות לפני ה-Deploy:
+   - Root Directory: לוחצים Edit ובוחרים  apps/web
+   - Framework Preset: Next.js (מזוהה לבד)
+   - Environment Variables:
+       API_URL = הכתובת של Railway משלב 2 (עם https://, בלי / בסוף)
+
+4. Deploy. מעתיקים את הכתובת שקיבלתם, למשל https://sagarnu.vercel.app
+
+
+שלב 4: חוזרים ל-Railway ומחברים
+--------------------------------
+1. בשירות ה-API ← Variables ← משנים:
+     WEB_ORIGIN = הכתובת של Vercel (בדיוק, עם https://, בלי / בסוף)
+2. Railway יעשה Redeploy לבד. אם לא: Deployments ← Redeploy.
+
+3. בדיקה: נכנסים לכתובת של Vercel, נרשמים, ממלאים שאלון, מוסיפים חוזה ותשלום.
+
+אם ההתחברות לא עובדת, כמעט תמיד הסיבה ש-WEB_ORIGIN לא זהה בדיוק לכתובת
+שבשורת הכתובות בדפדפן (http מול https, / בסוף, www).
+
+
+=====================================================================
+  חלק ג' – שירותים חיצוניים (מפתחות)
+=====================================================================
+
+ג1. Resend – שליחת מיילים (מומלץ לפני שמשתמשים אמיתיים נרשמים)
+---------------------------------------------------------------
+1. נרשמים ב- https://resend.com
+2. API Keys ← Create API Key (הרשאת Sending access). מעתיקים (מתחיל ב-re_).
+3. Domains ← Add Domain ← מוסיפים את רשומות ה-DNS אצל רשם הדומיין ומחכים לאימות.
+   בלי דומיין אפשר לבדוק עם onboarding@resend.dev, אבל זה שולח רק לאימייל
+   של החשבון שלכם ב-Resend.
+4. ב-Railway ← Variables:
+     RESEND_API_KEY = re_...
+     EMAIL_FROM     = סגרנו <noreply@הדומיין-שלכם>
+   מרגע שיש מפתח, אימות מייל הופך לחובה לפני יצירת אירוע.
+
+ג2. Google – כפתור "המשך עם Google" (אופציונלי)
+-----------------------------------------------
+1. https://console.cloud.google.com ← יוצרים פרויקט.
+2. APIs & Services ← OAuth consent screen: External, שם האפליקציה, אימייל תמיכה.
+3. Credentials ← Create Credentials ← OAuth client ID ← Web application.
+   Authorized redirect URIs:
+     https://<הכתובת-של-vercel>/v1/auth/callback/google
+     http://localhost:3000/v1/auth/callback/google      (לפיתוח)
+4. ב-Railway: GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET
+5. ב-Vercel: NEXT_PUBLIC_GOOGLE_ENABLED = true ← ואז Redeploy (חובה, הערך נקבע בזמן build).
+
+ג3. Groq – ניתוח חוזים ב-AI (שלב 2, אפשר לפתוח כבר עכשיו)
+----------------------------------------------------------
+1. https://console.groq.com ← נרשמים.
+2. API Keys ← Create API Key. מעתיקים (מתחיל ב-gsk_) ושומרים במקום בטוח.
+3. עוד לא שמים אותו בשום מקום. כשנממש את שלב 2 הוא ייכנס ל-Railway בתור GROQ_API_KEY.
+   לניסוי הדיוק כדאי להכין כבר 5–10 חוזים אמיתיים (docx, PDF, וגם PDF סרוק).
+
+ג4. Meta WhatsApp – תזכורות (שלב 3, בטיפולך)
+---------------------------------------------
+מה צריך להעביר אליי כשנגיע לשלב 3:
+  - Phone Number ID ו-WhatsApp Business Account ID
+  - טוקן קבוע של System User (לא הטוקן הזמני ל-24 שעות)
+  - App Secret (לאימות webhooks)
+  - תבנית Utility מאושרת. הטיוטה מהתוכנית:
+      היי {{1}}, תזכורת: יש לשלם לספק {{2}} סכום של {{3}} עד {{4}}, כפי שסוכם. לפרטים: {{5}}
+  - אימות עסק ב-Meta Business (בלי זה יש מגבלה של כ-250 נמענים ביום)
+
+ג5. דומיין משלכם (כשתרצו)
+--------------------------
+1. Vercel ← Project ← Settings ← Domains ← מוסיפים את הדומיין ועוקבים אחרי הוראות ה-DNS.
+2. מעדכנים WEB_ORIGIN ב-Railway לדומיין החדש.
+3. מעדכנים את ה-redirect URI ב-Google.
+
+
+=====================================================================
+  טבלת סיכום – איזה משתנה הולך לאן
+=====================================================================
+
+Railway (שירות ה-API):
+  BETTER_AUTH_SECRET     חובה    מחרוזת אקראית
+  DATABASE_URL           חובה    ${{Postgres.DATABASE_URL}}
+  WEB_ORIGIN             חובה    הכתובת של Vercel
+  RESEND_API_KEY         מומלץ   re_...
+  EMAIL_FROM             מומלץ   סגרנו <noreply@domain>
+  GOOGLE_CLIENT_ID       רשות
+  GOOGLE_CLIENT_SECRET   רשות
+
+Vercel (האתר):
+  API_URL                     חובה   הכתובת של Railway
+  NEXT_PUBLIC_GOOGLE_ENABLED  רשות   true אחרי הגדרת Google
+
+אסור לשים מפתחות בקוד או לעשות להם commit. קבצי .env כבר ב-.gitignore.
