@@ -51,6 +51,44 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(vite@8.3.4)
 
+  packages/i18n:
+    dependencies:
+      '@sagarnu/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      '@sagarnu/config':
+        specifier: workspace:*
+        version: link:../config
+      '@sagarnu/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(vite@8.3.4)
+
+  packages/schemas:
+    dependencies:
+      '@sagarnu/domain':
+        specifier: workspace:*
+        version: link:../domain
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@sagarnu/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(vite@8.3.4)
+
 packages:
 
   '@cacheable/memory@2.2.0':
@@ -867,6 +905,9 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
 snapshots:
 
   '@cacheable/memory@2.2.0':
@@ -1548,3 +1589,5 @@ snapshots:
   word-wrap@1.2.5: {}
 
   yocto-queue@0.1.0: {}
+
+  zod@4.6.5: {}
