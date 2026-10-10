@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sagarnu.app/schemas/contract-extraction/v1.json",
+  "title": "ContractExtraction",
+  "description": "DESIGN ONLY — not used by the code yet. Planned output of the phase-2 LLM (Groq gpt-oss-120b, response_format json_schema strict) for one Israeli wedding-vendor contract or price quote. Based on docs/PLAN.txt §6, with the additions listed in Future/FUTURE_WORK.txt (signed_on, facebook, instagram; category keys aligned with the real system categories). Amounts are ILS numbers as written in the document; the app converts them to agorot. Strict mode: every property is required and unknown values are null (or [] for lists).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vendor",
+    "category_guess",
+    "pricing",
+    "payment_schedule",
+    "event_date_in_contract",
+    "signed_on",
+    "included_items",
+    "excluded_items",
+    "cancellation_policy",
+    "warnings",
+    "confidence"
+  ],
+  "properties": {
+    "vendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "business_id",
+        "contact_name",
+        "phone",
+        "email",
+        "website",
+        "facebook",
+        "instagram"
+      ],
+      "properties": {
+        "name": { "type": ["string", "null"], "description": "Trade/brand name as the couple knows it." },
+        "business_id": { "type": ["string", "null"], "description": "ח.פ. / ע.מ. digits as printed." },
+        "contact_name": { "type": ["string", "null"] },
+        "phone": { "type": ["string", "null"], "description": "As printed, e.g. 050-1234567." },
+        "email": { "type": ["string", "null"] },
+        "website": {
+          "type": ["string", "null"],
+          "description": "Full URL; add https:// if printed as www.…"
+        },
+        "facebook": {
+          "type": ["string", "null"],
+          "description": "Added vs PLAN §6 (the app stores facebookUrl)."
+        },
+        "instagram": {
+          "type": ["string", "null"],
+          "description": "Added vs PLAN §6 (the app stores instagramUrl)."
+        }
+      }
+    },
+    "category_guess": {
+      "type": ["string", "null"],
+      "description": "System category key (packages/domain/src/categories.ts). The app has no field for it yet — it would pre-select the category tab.",
+      "enum": [
+        "venue",
+        "catering",
+        "bar",
+        "photo",
+        "video",
+        "dj",
+        "band",
+        "design",
+        "dress",
+        "suit",
+        "makeup",
+        "rabbi",
+        "invitations",
+        "transport",
+        "gifts",
+        "rings",
+        "suite",
+        "honeymoon",
+        "attractions",
+        "permits",
+        "other",
+        null
+      ]
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pricing_type", "total", "per_guest_price", "min_guests", "vat", "raw_text"],
+      "properties": {
+        "pricing_type": { "type": ["string", "null"], "enum": ["fixed", "per_guest", "estimate", null] },
+        "total": {
+          "type": ["number", "null"],
+          "description": "ILS as stated. null for per-guest pricing unless a total is printed."
+        },
+        "per_guest_price": { "type": ["number", "null"], "description": "ILS per guest/plate." },
+        "min_guests": { "type": ["integer", "null"] },
+        "vat": {
+          "type": "string",
+          "enum": ["included", "excluded", "unknown"],
+          "description": "included = כולל מע״מ, excluded = + מע״מ / לא כולל, otherwise unknown."
+        },
+        "raw_text": {
+          "type": ["string", "null"],
+          "description": "The price sentence/table as written, for review."
+        }
+      }
+    },
+    "payment_schedule": {
+      "type": "array",
+      "description": "One item per installment, in document order.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "amount", "percent", "due_date", "relative", "raw_text"],
+        "properties": {
+          "label": { "type": "string", "description": "e.g. מקדמה, תשלום שני, יתרה." },
+          "amount": { "type": ["number", "null"], "description": "ILS, only if stated as an amount." },
+          "percent": { "type": ["number", "null"], "description": "Only if stated as a percentage." },
+          "due_date": {
+            "type": ["string", "null"],
+            "description": "YYYY-MM-DD for a fixed date (DD/MM order in the source)."
+          },
+          "relative": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["anchor", "days_offset"],
+            "description": "For במעמד החתימה / שבוע לפני האירוע / ביום האירוע …",
+            "properties": {
+              "anchor": { "type": "string", "enum": ["signing", "event"] },
+              "days_offset": {
+                "type": "integer",
+                "description": "Negative = before, 0 = on the day, positive = after."
+              }
+            }
+          },
+          "raw_text": { "type": "string", "description": "The installment as written." }
+        }
+      }
+    },
+    "event_date_in_contract": {
+      "type": ["string", "null"],
+      "description": "YYYY-MM-DD of the event as stated in the contract — to warn when it differs from the event in the app."
+    },
+    "signed_on": {
+      "type": ["string", "null"],
+      "description": "Added vs PLAN §6: YYYY-MM-DD the contract was signed; anchor for 'N days after signing'."
+    },
+    "included_items": { "type": "array", "maxItems": 50, "items": { "type": "string" } },
+    "excluded_items": { "type": "array", "maxItems": 50, "items": { "type": "string" } },
+    "cancellation_policy": {
+      "type": ["string", "null"],
+      "description": "Cancellation / postponement terms, faithful."
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Hebrew notes on unusual terms: cancellation fees, price increases, overtime, minimum guests, truncated document."
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vendor", "pricing", "payment_schedule", "included_items"],
+      "properties": {
+        "vendor": { "type": "string", "enum": ["high", "medium", "low"] },
+        "pricing": { "type": "string", "enum": ["high", "medium", "low"] },
+        "payment_schedule": { "type": "string", "enum": ["high", "medium", "low"] },
+        "included_items": { "type": "string", "enum": ["high", "medium", "low"] }
+      }
+    }
+  }
+}
