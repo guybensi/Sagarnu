@@ -6,29 +6,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { authErrorMessage, GoogleButton } from "@/components/auth/shared";
+import { authErrorMessage, GoogleButton, isWrongCredentials, type AuthError } from "@/components/auth/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/form";
+import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [unverified, setUnverified] = useState(false);
+  const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: "", password: "", rememberMe: true },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    setError("");
+    setError(null);
     const { error } = await authClient.signIn.email(values);
-    if (error) {
-      setUnverified(error.code === "EMAIL_NOT_VERIFIED");
-      return setError(authErrorMessage(error));
-    }
+    if (error) return setError(error);
     router.replace("/");
   });
+
+  const email = form.watch("email");
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
@@ -42,14 +41,8 @@ export default function LoginPage() {
       <Field label="אימייל" htmlFor="email" error={form.formState.errors.email && "אימייל לא תקין"}>
         <Input id="email" type="email" dir="ltr" autoComplete="email" {...form.register("email")} />
       </Field>
-      <Field label="סיסמה" htmlFor="password" error={form.formState.errors.password && "שדה חובה"}>
-        <Input
-          id="password"
-          type="password"
-          dir="ltr"
-          autoComplete="current-password"
-          {...form.register("password")}
-        />
+      <Field label="סיסמה" htmlFor="password" error={form.formState.errors.password && "צריך להזין סיסמה"}>
+        <PasswordInput id="password" autoComplete="current-password" {...form.register("password")} />
       </Field>
 
       <div className="flex items-center justify-between">
@@ -66,14 +59,26 @@ export default function LoginPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
-          {error}
-          {unverified && (
+        <div role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          <p>{authErrorMessage(error)}</p>
+          {isWrongCredentials(error) && (
+            <p className="mt-1 text-ink">
+              עוד לא נרשמת?{" "}
+              <Link
+                href={`/signup?email=${encodeURIComponent(email)}`}
+                className="font-medium text-brand-600 underline"
+              >
+                יצירת חשבון
+              </Link>{" "}
+              · או בדקו את הסיסמה ונסו שוב
+            </p>
+          )}
+          {error.code === "EMAIL_NOT_VERIFIED" && (
             <Link
-              className="ms-2 font-medium underline"
-              href={`/verify-email?email=${encodeURIComponent(form.getValues("email"))}`}
+              className="mt-1 inline-block font-medium underline"
+              href={`/verify-email?email=${encodeURIComponent(email)}`}
             >
-              שליחה חוזרת
+              שליחה חוזרת של קישור האימות
             </Link>
           )}
         </div>

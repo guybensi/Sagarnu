@@ -2,36 +2,69 @@
 
 import { failedPasswordRules, passwordRules, type PasswordRule } from "@sagarnu/schemas";
 import { he } from "@sagarnu/i18n";
-import { Check, Circle } from "lucide-react";
+import { Check, Circle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { authClient, googleEnabled } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 
 const AUTH_ERRORS: Record<string, string> = {
-  INVALID_EMAIL_OR_PASSWORD: "האימייל או הסיסמה לא נכונים",
+  // Same answer for an unknown email and a wrong password, so the form never reveals who is registered.
+  INVALID_EMAIL_OR_PASSWORD: "לא מצאנו חשבון עם האימייל והסיסמה האלה",
   USER_ALREADY_EXISTS: "כבר יש חשבון עם האימייל הזה",
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "כבר יש חשבון עם האימייל הזה",
   EMAIL_NOT_VERIFIED: "צריך לאמת את כתובת האימייל. שלחנו לך קישור",
   PASSWORD_POLICY: "הסיסמה לא עומדת בדרישות",
+  PASSWORD_TOO_SHORT: "הסיסמה לא עומדת בדרישות",
+  INVALID_EMAIL: "כתובת האימייל לא תקינה",
   INVALID_TOKEN: "הקישור לא תקין או שפג תוקפו",
+  INVALID_ORIGIN: "שגיאת הגדרה בשרת: כתובת האתר (WEB_ORIGIN) לא תואמת",
   TOO_MANY_REQUESTS: "יותר מדי ניסיונות. נסו שוב בעוד דקה",
+  SERVER_DOWN: "השרת לא זמין כרגע. נסו שוב בעוד רגע",
 };
 
-export function authErrorMessage(error: { code?: string; status?: number } | null | undefined): string {
+export type AuthError = { code?: string; status?: number } | null | undefined;
+
+export function authErrorMessage(error: AuthError): string {
   if (!error) return "";
   if (error.status === 429) return AUTH_ERRORS.TOO_MANY_REQUESTS!;
-  return (error.code && AUTH_ERRORS[error.code]) || "משהו השתבש. נסו שוב";
+  if (error.code && AUTH_ERRORS[error.code]) return AUTH_ERRORS[error.code]!;
+  // No status (network) or 5xx: the API is down or unreachable, not a problem with what the user typed.
+  if (!error.status || error.status >= 500) return AUTH_ERRORS.SERVER_DOWN!;
+  return "משהו השתבש. נסו שוב";
 }
 
-export function PasswordChecklist({ password }: { password: string }) {
+/** Shown under the login error: the account may simply not exist yet. */
+export const isWrongCredentials = (error: AuthError) => error?.code === "INVALID_EMAIL_OR_PASSWORD";
+export const isExistingUser = (error: AuthError) => !!error?.code?.startsWith("USER_ALREADY_EXISTS");
+
+/** `highlightFailed` (after a submit attempt) turns the rules that are still missing red. */
+export function PasswordChecklist({
+  password,
+  highlightFailed,
+}: {
+  password: string;
+  highlightFailed?: boolean;
+}) {
   const failed = new Set(failedPasswordRules(password));
   return (
     <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
       {(Object.keys(passwordRules) as PasswordRule[]).map((rule) => {
         const ok = password.length > 0 && !failed.has(rule);
         return (
-          <li key={rule} className={cn("flex items-center gap-1.5", ok ? "text-success" : "text-muted")}>
-            {ok ? <Check className="size-3.5" /> : <Circle className="size-3" />}
+          <li
+            key={rule}
+            className={cn(
+              "flex items-center gap-1.5",
+              ok ? "text-success" : highlightFailed ? "font-medium text-danger" : "text-muted",
+            )}
+          >
+            {ok ? (
+              <Check className="size-3.5" />
+            ) : highlightFailed ? (
+              <X className="size-3.5" />
+            ) : (
+              <Circle className="size-3" />
+            )}
             {he.fieldErrors[`password_${rule}`]}
           </li>
         );

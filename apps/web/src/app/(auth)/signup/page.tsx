@@ -4,12 +4,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema, type SignUpInput } from "@sagarnu/schemas";
 import { Heart, Briefcase } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { authErrorMessage, GoogleButton, PasswordChecklist } from "@/components/auth/shared";
+import {
+  authErrorMessage,
+  GoogleButton,
+  isExistingUser,
+  PasswordChecklist,
+  type AuthError,
+} from "@/components/auth/shared";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
+import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 
@@ -18,22 +25,24 @@ const TYPES = [
   { value: "planner", label: "מפיק/ת אירועים", hint: "מנהל/ת כמה אירועים", icon: Briefcase },
 ] as const;
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const params = useSearchParams();
+  const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { name: "", email: "", password: "", userType: "couple" },
+    defaultValues: { name: "", email: params.get("email") ?? "", password: "", userType: "couple" },
   });
   const password = form.watch("password");
+  const passwordInvalid = !!form.formState.errors.password;
 
   const onSubmit = form.handleSubmit(async (values) => {
-    setError("");
+    setError(null);
     const { data, error } = await authClient.signUp.email({
       ...values,
       callbackURL: `${window.location.origin}/`,
     });
-    if (error) return setError(authErrorMessage(error));
+    if (error) return setError(error);
     // With email verification on, sign-up does not create a session yet.
     if (data && "token" in data && data.token) router.replace("/");
     else router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
@@ -82,18 +91,32 @@ export default function SignUpPage() {
       <Field label="אימייל" htmlFor="email" error={form.formState.errors.email && "אימייל לא תקין"}>
         <Input id="email" type="email" dir="ltr" autoComplete="email" {...form.register("email")} />
       </Field>
-      <Field label="סיסמה" htmlFor="password">
-        <Input
+      <Field label="סיסמה" htmlFor="password" error={passwordInvalid ? "הסיסמה לא עומדת בדרישות" : undefined}>
+        <PasswordInput
           id="password"
-          type="password"
-          dir="ltr"
           autoComplete="new-password"
+          aria-invalid={passwordInvalid || undefined}
           {...form.register("password")}
         />
-        <PasswordChecklist password={password} />
+        <PasswordChecklist password={password} highlightFailed={passwordInvalid} />
       </Field>
 
-      {error && <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</div>}
+      {error && (
+        <div role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          <p>{authErrorMessage(error)}</p>
+          {isExistingUser(error) && (
+            <p className="mt-1 text-ink">
+              <Link href="/login" className="font-medium text-brand-600 underline">
+                להתחברות
+              </Link>{" "}
+              ·{" "}
+              <Link href="/forgot-password" className="font-medium text-brand-600 underline">
+                שכחתי סיסמה
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
 
       <Button type="submit" size="lg" loading={form.formState.isSubmitting}>
         הרשמה
@@ -106,5 +129,13 @@ export default function SignUpPage() {
         </Link>
       </p>
     </form>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
   );
 }

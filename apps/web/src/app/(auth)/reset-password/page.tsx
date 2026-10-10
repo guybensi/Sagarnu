@@ -7,7 +7,8 @@ import { Suspense, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { authErrorMessage, PasswordChecklist } from "@/components/auth/shared";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/form";
+import { Field } from "@/components/ui/form";
+import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
 
 function ResetPasswordForm() {
@@ -53,10 +54,8 @@ function ResetPasswordForm() {
     <form onSubmit={submit} className="flex flex-col gap-5">
       <h1 className="text-2xl font-bold">סיסמה חדשה</h1>
       <Field label="סיסמה חדשה" htmlFor="password">
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
-          dir="ltr"
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -64,10 +63,8 @@ function ResetPasswordForm() {
         <PasswordChecklist password={password} />
       </Field>
       <Field label="אימות סיסמה" htmlFor="confirm">
-        <Input
+        <PasswordInput
           id="confirm"
-          type="password"
-          dir="ltr"
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
