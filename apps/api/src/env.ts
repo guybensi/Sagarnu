@@ -29,18 +29,32 @@ export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
     Object.entries(raw).filter(([, v]) => v !== undefined && v.trim() !== ""),
   );
   const parsed = schema.safeParse(source);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
-    throw new Error(`Invalid environment variables:\n${issues}`);
+  const problems = parsed.success
+    ? []
+    : parsed.error.issues.map(
+        (i) => `${i.path.join(".")}: ${source[String(i.path[0])] ? i.message : "missing"}`,
+      );
+
+  // Defaults are for local dev only: an embedded DB on Railway's disk would lose data on every deploy.
+  if ((source.NODE_ENV ?? "production") === "production") {
+    if (!source.DATABASE_URL?.startsWith("postgres")) {
+      problems.push("DATABASE_URL: missing — on Railway set it to ${{Postgres.DATABASE_URL}}");
+    }
+    if (!source.WEB_ORIGIN) problems.push("WEB_ORIGIN: missing — the public URL of the web app (Vercel)");
+  }
+
+  if (!parsed.success || problems.length > 0) {
+    throw new Error(
+      [
+        "Invalid environment variables:",
+        ...problems.map((p) => `  - ${p}`),
+        "",
+        "Railway: open the API service (not Postgres) → Variables, add them, then press Deploy to apply.",
+        "Local: copy apps/api/.env.example to apps/api/.env. See SETUP.txt.",
+      ].join("\n"),
+    );
   }
   const env = parsed.data;
-  if (env.NODE_ENV === "production") {
-    // Defaults are for local dev only: an embedded DB on Railway's disk would lose data on every deploy.
-    if (!source.DATABASE_URL || env.DATABASE_URL.startsWith("pglite:memory")) {
-      throw new Error("DATABASE_URL must be set in production (Railway: ${{Postgres.DATABASE_URL}})");
-    }
-    if (!source.WEB_ORIGIN) throw new Error("WEB_ORIGIN must be set in production (the Vercel URL)");
-  }
   return {
     ...env,
     requireEmailVerification: env.REQUIRE_EMAIL_VERIFICATION ?? Boolean(env.RESEND_API_KEY),

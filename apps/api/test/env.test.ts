@@ -20,6 +20,18 @@ describe("env", () => {
     expect(env.requireEmailVerification).toBe(true);
   });
 
+  it("lists every missing variable at once", () => {
+    let message = "";
+    try {
+      loadEnv({});
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).toMatch(/BETTER_AUTH_SECRET: missing/);
+    expect(message).toMatch(/DATABASE_URL: missing/);
+    expect(message).toMatch(/WEB_ORIGIN: missing/);
+  });
+
   it("refuses to start in production without a real database and web origin", () => {
     expect(() => loadEnv({ BETTER_AUTH_SECRET: secret })).toThrow(/DATABASE_URL/);
     expect(() => loadEnv({ BETTER_AUTH_SECRET: secret, DATABASE_URL: "postgresql://x" })).toThrow(
