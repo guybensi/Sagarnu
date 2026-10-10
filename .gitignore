@@ -11,3 +11,4 @@ coverage/
 Thumbs.db
 *.log
 .claude/settings*.json
+.data/
