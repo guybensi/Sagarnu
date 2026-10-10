@@ -1,0 +1,20 @@
+{
+  "vendorName": "",
+  "vendorBusinessId": null,
+  "vendorContactName": null,
+  "vendorPhone": null,
+  "vendorEmail": null,
+  "websiteUrl": null,
+  "facebookUrl": null,
+  "instagramUrl": null,
+  "totalAmountAgorot": null,
+  "vatMode": "unknown",
+  "pricingType": "fixed",
+  "perGuestPriceAgorot": null,
+  "minGuests": null,
+  "includedItems": [],
+  "excludedItems": [],
+  "cancellationPolicy": null,
+  "signedOn": null,
+  "schedule": []
+}

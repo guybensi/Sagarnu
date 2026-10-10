@@ -13,3 +13,8 @@ Thumbs.db
 .claude/settings*.json
 .data/
 next-env.d.ts
+
+# Ground-truth datasets: real contracts are private. Only the template, docs and tooling are tracked.
+datasets/contracts/examples/*
+!datasets/contracts/examples/.gitkeep
+datasets/**/*.pdf

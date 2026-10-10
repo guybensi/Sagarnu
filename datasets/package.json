@@ -1,0 +1,24 @@
+{
+  "name": "@sagarnu/datasets",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ground-truth datasets and their tooling. Not part of the deployed app.",
+  "scripts": {
+    "validate:contracts": "tsx scripts/validate-contracts.ts",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sagarnu/domain": "workspace:*",
+    "@sagarnu/schemas": "workspace:*",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@sagarnu/config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}
