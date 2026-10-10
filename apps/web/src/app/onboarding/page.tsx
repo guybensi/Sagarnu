@@ -4,7 +4,7 @@ import { endpoints, keys } from "@sagarnu/api-client";
 import { SYSTEM_CATEGORIES } from "@sagarnu/domain";
 import { createEventSchema } from "@sagarnu/schemas";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 } from "@/components/event/event-fields";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/card";
+import { Input } from "@/components/ui/form";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import { toastError } from "@/lib/errors";
@@ -54,7 +55,16 @@ export default function OnboardingPage() {
   const [relevant, setRelevant] = useState<Set<string>>(
     new Set(SYSTEM_CATEGORIES.map((c) => c.key).filter((k) => k !== "other")),
   );
+  const [custom, setCustom] = useState<string[]>([]);
+  const [customDraft, setCustomDraft] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const addCustom = () => {
+    const name = customDraft.trim();
+    const taken = new Set([...SYSTEM_CATEGORIES.map((c) => c.nameHe), ...custom]);
+    if (name && !taken.has(name)) setCustom((list) => [...list, name]);
+    setCustomDraft("");
+  };
 
   useEffect(() => {
     if (!session.isPending && !session.data) router.replace("/login");
@@ -82,6 +92,7 @@ export default function OnboardingPage() {
     const payload = createEventSchema.safeParse({
       ...toEventPayload(form, unknown),
       relevantCategoryKeys: [...relevant, "other"],
+      customCategories: custom,
       completeQuestionnaire: true,
     });
     if (!payload.success) {
@@ -155,7 +166,44 @@ export default function OnboardingPage() {
                   </button>
                 );
               })}
+              {custom.map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-500 bg-brand-50 py-2 ps-4 pe-2 text-sm font-medium text-brand-700"
+                >
+                  <Check className="size-3.5" />
+                  {name}
+                  <button
+                    type="button"
+                    aria-label={`הסרת ${name}`}
+                    onClick={() => setCustom((list) => list.filter((n) => n !== name))}
+                    className="rounded-full p-0.5 hover:bg-brand-100"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </span>
+              ))}
             </div>
+
+            <form
+              className="mt-6 flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                addCustom();
+              }}
+            >
+              <Input
+                aria-label="קטגוריה משלכם"
+                placeholder="קטגוריה משלכם, למשל: צלם מגנטים"
+                maxLength={40}
+                value={customDraft}
+                onChange={(e) => setCustomDraft(e.target.value)}
+              />
+              <Button type="submit" variant="secondary" disabled={!customDraft.trim()}>
+                <Plus className="size-4" />
+                הוספה
+              </Button>
+            </form>
           </>
         )}
       </div>

@@ -9,6 +9,7 @@ import type { Env } from "./env";
 import { requireUser } from "./lib/context";
 import { registerErrorHandler } from "./lib/errors";
 import { contractRoutes } from "./routes/contracts";
+import { coverRoutes } from "./routes/cover";
 import { eventRoutes } from "./routes/events";
 import { meRoutes } from "./routes/me";
 
@@ -62,6 +63,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     await protectedApp.register(meRoutes);
     await protectedApp.register(eventRoutes);
     await protectedApp.register(contractRoutes);
+    await protectedApp.register(coverRoutes);
   });
 
   return app;

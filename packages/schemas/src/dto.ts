@@ -47,6 +47,8 @@ export interface EventDto {
   timeOfDay: TimeOfDay | null;
   notes: string | null;
   questionnaireCompletedAt: string | null;
+  /** Relative URL of the dashboard photo (cache-busted), or null. */
+  coverPhotoUrl: string | null;
   role: Role;
 }
 

@@ -1,6 +1,7 @@
 import { isNull } from "drizzle-orm";
 import {
   boolean,
+  customType,
   date,
   index,
   integer,
@@ -36,10 +37,31 @@ export const event = pgTable("event", {
   timeOfDay: timeOfDay(),
   notes: text(),
   questionnaireCompletedAt: timestamp({ withTimezone: true }),
+  /** Set when a dashboard photo exists; also busts the browser cache when it changes. */
+  coverPhotoUpdatedAt: timestamp({ withTimezone: true }),
   createdBy: uuid()
     .notNull()
     .references(() => user.id),
   deletedAt: deletedAt(),
+  ...timestamps,
+});
+
+const bytea = customType<{ data: Buffer; driverData: Buffer | Uint8Array }>({
+  dataType: () => "bytea",
+  fromDriver: (value) => Buffer.from(value),
+});
+
+/**
+ * The couple's dashboard photo. Kept in its own table so event queries never load the bytes.
+ * Moves to R2 together with contract files in phase 2.
+ */
+export const eventCoverPhoto = pgTable("event_cover_photo", {
+  eventId: uuid()
+    .primaryKey()
+    .references(() => event.id, { onDelete: "cascade" }),
+  mime: text().notNull(),
+  data: bytea().notNull(),
+  uploadedBy: uuid().references(() => user.id, { onDelete: "set null" }),
   ...timestamps,
 });
 

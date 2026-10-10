@@ -35,6 +35,9 @@ export const endpoints = {
       api<EventDto>(ev(eventId), { method: "PATCH", body }),
     remove: (eventId: string) => api<void>(ev(eventId), { method: "DELETE" }),
     dashboard: (eventId: string) => api<DashboardDto>(`${ev(eventId)}/dashboard`),
+    setCover: (eventId: string, dataUrl: string) =>
+      api<EventDto>(`${ev(eventId)}/cover`, { method: "PUT", body: { dataUrl } }),
+    removeCover: (eventId: string) => api<EventDto>(`${ev(eventId)}/cover`, { method: "DELETE" }),
     members: (eventId: string) => api<MemberDto[]>(`${ev(eventId)}/members`),
   },
   categories: {

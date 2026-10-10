@@ -19,7 +19,9 @@ export const he = {
   eventStyle: {
     hall: "אולם",
     garden: "גן אירועים",
-    outdoor: "בחוץ",
+    outdoor: "שטח",
+    home: "בית",
+    festival: "פסטיבל (לינה)",
     restaurant: "מסעדה",
     other: "אחר",
   } satisfies Record<EventStyle, string>,
@@ -85,6 +87,7 @@ export const he = {
     invalid_phone: "מספר טלפון לא תקין",
     must_be_positive: "הסכום חייב להיות גדול מ-0",
     required: "שדה חובה",
+    invalid_image: "קובץ התמונה לא נתמך",
   },
 } as const;
 

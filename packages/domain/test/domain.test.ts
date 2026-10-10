@@ -4,6 +4,7 @@ import {
   can,
   contractBalance,
   countdown,
+  daysUntil,
   isValidIsoDate,
   jerusalemInstant,
   perGuestTotal,
@@ -11,6 +12,7 @@ import {
   resolveScheduleAmount,
   shekelsToAgorot,
   summarizeExpenses,
+  timeOfDayFor,
   todayIso,
   type ScheduleItemLike,
 } from "../src";
@@ -156,6 +158,25 @@ describe("balances", () => {
       budgetLeftAgorot: -50_000,
       isOverBudget: true,
     });
+  });
+});
+
+describe("event timing", () => {
+  it("derives noon/evening from the start time", () => {
+    expect(timeOfDayFor("12:30")).toBe("noon");
+    expect(timeOfDayFor("16:59")).toBe("noon");
+    expect(timeOfDayFor("17:00")).toBe("evening");
+    expect(timeOfDayFor("19:30")).toBe("evening");
+    expect(timeOfDayFor(null)).toBeNull();
+  });
+
+  it("counts calendar days to the event", () => {
+    expect(daysUntil("2026-10-11", "2026-10-10")).toBe(1);
+    expect(daysUntil("2026-10-10", "2026-10-10")).toBe(0);
+    expect(daysUntil("2027-10-10", "2026-10-10")).toBe(365);
+    // Across the DST change (Oct 25, 2026) a day is still a day.
+    expect(daysUntil("2026-11-01", "2026-10-20")).toBe(12);
+    expect(daysUntil("2026-10-01", "2026-10-10")).toBe(-9);
   });
 });
 

@@ -1,4 +1,5 @@
 import { schema } from "@sagarnu/db";
+import { timeOfDayFor, type TimeOfDay } from "@sagarnu/domain";
 import {
   categoryRelevanceSchema,
   createEventSchema,
@@ -20,6 +21,14 @@ import { loadLedger } from "../services/ledger";
 const { category, contract, event, eventCategorySetting, eventMember, user } = schema;
 
 type Params = { eventId: string };
+
+/** The start time decides noon vs. evening; the explicit choice only counts while the time is unknown. */
+function withDerivedTimeOfDay<T extends { eventTime?: string | null; timeOfDay?: TimeOfDay | null }>(
+  input: T,
+): T {
+  const derived = timeOfDayFor(input.eventTime);
+  return derived ? { ...input, timeOfDay: derived } : input;
+}
 
 export async function eventRoutes(app: FastifyInstance): Promise<void> {
   const { db, env } = app.ctx;
@@ -51,7 +60,9 @@ export async function eventRoutes(app: FastifyInstance): Promise<void> {
   app.post("/v1/events", async (req, reply): Promise<EventDto> => {
     const me = currentUser(req);
     if (env.requireEmailVerification && !me.emailVerified) throw new AppError("email_not_verified");
-    const { relevantCategoryKeys, completeQuestionnaire, ...fields } = createEventSchema.parse(req.body);
+    const { relevantCategoryKeys, customCategories, completeQuestionnaire, ...input } =
+      createEventSchema.parse(req.body);
+    const fields = withDerivedTimeOfDay(input);
 
     const created = await db.transaction(async (tx) => {
       if (me.userType === "couple") {
@@ -87,6 +98,18 @@ export async function eventRoutes(app: FastifyInstance): Promise<void> {
           );
         }
       }
+      if (customCategories?.length) {
+        const names = [...new Set(customCategories.map((n) => n.trim()))];
+        await tx.insert(category).values(
+          names.map((nameHe, i) => ({
+            eventId: row.id,
+            nameHe,
+            icon: "tag",
+            isCustom: true,
+            sortOrder: 1000 + i * 10,
+          })),
+        );
+      }
       await tx.update(user).set({ defaultEventId: row.id }).where(eq(user.id, me.id));
       await audit(tx, {
         eventId: row.id,
@@ -110,7 +133,8 @@ export async function eventRoutes(app: FastifyInstance): Promise<void> {
   app.patch<{ Params: Params }>("/v1/events/:eventId", async (req) => {
     const me = currentUser(req);
     const { event: ev, role } = await eventAccess(req, req.params.eventId, "event.edit");
-    const { completeQuestionnaire, ...patch } = updateEventSchema.parse(req.body);
+    const { completeQuestionnaire, ...input } = updateEventSchema.parse(req.body);
+    const patch = withDerivedTimeOfDay(input);
 
     const updated = await db.transaction(async (tx) => {
       const [row] = await tx

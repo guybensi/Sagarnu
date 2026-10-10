@@ -1,99 +1,19 @@
 "use client";
 
 import { useDashboard } from "@sagarnu/api-client";
-import { countdown, countdownTarget, type ExpenseSummary } from "@sagarnu/domain";
+import type { ExpenseSummary } from "@sagarnu/domain";
 import { formatDate, formatILS, formatNumber } from "@sagarnu/i18n";
-import type { DueItemDto, EventDto } from "@sagarnu/schemas";
-import {
-  AlertTriangle,
-  CalendarClock,
-  CalendarPlus,
-  Check,
-  MapPin,
-  PiggyBank,
-  Store,
-  Users,
-} from "lucide-react";
+import type { DueItemDto } from "@sagarnu/schemas";
+import { AlertTriangle, CalendarClock, Check, PiggyBank, Store, Users } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { EventHero } from "@/components/dashboard/event-hero";
 import { PaymentDialog } from "@/components/payments/payment-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge, Card, CardTitle, Spinner } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import { messageOf } from "@/lib/errors";
 import { useCan, useEventId } from "@/lib/use-event-id";
-
-function Countdown({ event }: { event: EventDto }) {
-  const target = countdownTarget(event.eventDate, event.eventTime);
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const base = "relative overflow-hidden rounded-card p-6 sm:p-8 text-white shadow-card";
-  const bg = "bg-[linear-gradient(135deg,var(--color-brand-500),var(--color-brand-700))]";
-
-  if (!target) {
-    return (
-      <div className={cn(base, bg)}>
-        <p className="text-sm text-white/80">{event.name}</p>
-        <h2 className="mt-1 text-2xl font-bold">עוד לא נקבע תאריך</h2>
-        <p className="mt-1 text-sm text-white/80">כשתקבעו תאריך תופיע כאן ספירה לאחור</p>
-        <Link href={`/e/${event.id}/details`}>
-          <Button variant="secondary" className="mt-5 border-0">
-            <CalendarPlus className="size-4" />
-            הזנת תאריך
-          </Button>
-        </Link>
-      </div>
-    );
-  }
-
-  const left = countdown(target, now);
-  const units = [
-    { value: left.days, label: "ימים" },
-    { value: left.hours, label: "שעות" },
-    { value: left.minutes, label: "דקות" },
-  ];
-
-  return (
-    <div className={cn(base, bg)}>
-      <svg className="absolute -end-10 -top-10 size-56 opacity-10" viewBox="0 0 32 32" aria-hidden>
-        <circle cx="12" cy="16" r="8" fill="none" stroke="white" strokeWidth="1.5" />
-        <circle cx="20" cy="16" r="8" fill="none" stroke="white" strokeWidth="1.5" />
-      </svg>
-      <p className="text-sm text-white/80">{event.name}</p>
-      {left.isPast ? (
-        <h2 className="mt-1 text-3xl font-bold">מזל טוב! 🎉</h2>
-      ) : (
-        <div className="mt-3 flex gap-3 sm:gap-5">
-          {units.map((u) => (
-            <div
-              key={u.label}
-              className="min-w-20 rounded-2xl bg-white/15 px-4 py-3 text-center backdrop-blur-sm"
-            >
-              <p className="num text-3xl font-bold sm:text-4xl">{formatNumber(u.value)}</p>
-              <p className="text-xs text-white/80">{u.label}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/90">
-        <span className="num">
-          {formatDate(event.eventDate)}
-          {event.eventTime && ` · ${event.eventTime}`}
-        </span>
-        {(event.venueName || event.city) && (
-          <span className="flex items-center gap-1">
-            <MapPin className="size-3.5" />
-            {[event.venueName, event.city].filter(Boolean).join(", ")}
-          </span>
-        )}
-      </p>
-    </div>
-  );
-}
 
 function BudgetCard({ summary }: { summary: ExpenseSummary }) {
   const budget = summary.budgetAgorot;
@@ -199,7 +119,7 @@ export default function DashboardPage() {
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       <div className="lg:col-span-2">
-        <Countdown event={event} />
+        <EventHero event={event} />
       </div>
 
       <Card className="flex flex-col">

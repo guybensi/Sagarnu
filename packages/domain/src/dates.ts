@@ -36,3 +36,12 @@ export function jerusalemInstant(date: IsoDate, time: string | null = null): Dat
   const [h = 0, min = 0] = (time ?? "00:00").split(":").map(Number);
   return new Date(new TZDate(year, month - 1, day, h, min, TIME_ZONE).getTime());
 }
+
+/** Whole calendar days from `today` to `target` (0 = today, negative = past). */
+export function daysUntil(target: IsoDate, today: IsoDate): number {
+  const a = parseIsoDate(today);
+  const b = parseIsoDate(target);
+  return Math.round(
+    (Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / 86_400_000,
+  );
+}

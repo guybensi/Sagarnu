@@ -26,6 +26,9 @@ export function toEventDto(row: EventRow, role: Role): EventDto {
     timeOfDay: row.timeOfDay,
     notes: row.notes,
     questionnaireCompletedAt: row.questionnaireCompletedAt?.toISOString() ?? null,
+    coverPhotoUrl: row.coverPhotoUpdatedAt
+      ? `/v1/events/${row.id}/cover?v=${row.coverPhotoUpdatedAt.getTime()}`
+      : null,
     role,
   };
 }

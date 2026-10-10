@@ -4,7 +4,7 @@ export type UserType = (typeof USER_TYPES)[number];
 export const ROLES = ["owner", "editor", "viewer"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const EVENT_STYLES = ["hall", "garden", "outdoor", "restaurant", "other"] as const;
+export const EVENT_STYLES = ["hall", "garden", "outdoor", "home", "festival", "restaurant", "other"] as const;
 export type EventStyle = (typeof EVENT_STYLES)[number];
 
 export const CEREMONY_TYPES = ["religious", "civil", "alternative", "other"] as const;
@@ -47,3 +47,10 @@ export const PAYMENT_METHODS = [
   "other",
 ] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/** Weddings starting before 17:00 are noon weddings; the start time decides, not a separate question. */
+export function timeOfDayFor(time: string | null | undefined): TimeOfDay | null {
+  if (!time) return null;
+  const hour = Number(time.split(":")[0]);
+  return Number.isFinite(hour) ? (hour < 17 ? "noon" : "evening") : null;
+}

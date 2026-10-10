@@ -1,6 +1,7 @@
 "use client";
 
-import { CEREMONY_TYPES, EVENT_STYLES, KASHRUT_LEVELS, TIMES_OF_DAY } from "@sagarnu/domain";
+import { CEREMONY_TYPES, EVENT_STYLES, KASHRUT_LEVELS, timeOfDayFor, TIMES_OF_DAY } from "@sagarnu/domain";
+import { Moon, Sun } from "lucide-react";
 import { he } from "@sagarnu/i18n";
 import type { CreateEventInput } from "@sagarnu/schemas";
 import type { ReactNode } from "react";
@@ -8,7 +9,9 @@ import { Checkbox, Field, Input } from "@/components/ui/form";
 import { MoneyInput } from "@/components/ui/money-input";
 import { cn } from "@/lib/cn";
 
-export type EventForm = Required<Omit<CreateEventInput, "relevantCategoryKeys" | "completeQuestionnaire">>;
+export type EventForm = Required<
+  Omit<CreateEventInput, "relevantCategoryKeys" | "customCategories" | "completeQuestionnaire">
+>;
 
 export const emptyEventForm: EventForm = {
   name: "",
@@ -97,6 +100,7 @@ export function Chips<T extends string>({
 const text = (v: string) => (v.trim() === "" ? null : v);
 
 export function WhenFields({ form, set, unknown, toggleUnknown }: FieldProps) {
+  const derived = unknown.has("eventTime") ? null : timeOfDayFor(form.eventTime);
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       <Unknowable name="eventDate" label="תאריך האירוע" unknown={unknown} toggleUnknown={toggleUnknown}>
@@ -115,14 +119,28 @@ export function WhenFields({ form, set, unknown, toggleUnknown }: FieldProps) {
           onChange={(e) => set("eventTime", text(e.target.value))}
         />
       </Unknowable>
-      <Field label="צהריים או ערב?" className="sm:col-span-2">
-        <Chips
-          options={TIMES_OF_DAY}
-          labels={he.timeOfDay}
-          value={form.timeOfDay}
-          onChange={(v) => set("timeOfDay", v)}
-        />
-      </Field>
+      {derived ? (
+        <p className="flex items-center gap-2 text-sm text-muted sm:col-span-2">
+          {derived === "noon" ? (
+            <Sun className="size-4 text-gold" />
+          ) : (
+            <Moon className="size-4 text-brand-500" />
+          )}
+          <span>
+            <span className="font-medium text-ink">חתונת {he.timeOfDay[derived]}</span> · לפי שעת ההתחלה
+          </span>
+        </p>
+      ) : (
+        // Only asked while the start time is unknown.
+        <Field label="צהריים או ערב?" className="sm:col-span-2">
+          <Chips
+            options={TIMES_OF_DAY}
+            labels={he.timeOfDay}
+            value={form.timeOfDay}
+            onChange={(v) => set("timeOfDay", v)}
+          />
+        </Field>
+      )}
     </div>
   );
 }
