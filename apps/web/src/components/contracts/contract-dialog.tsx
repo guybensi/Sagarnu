@@ -4,6 +4,8 @@ import { ApiRequestError, endpoints, useCategories, useEvent } from "@sagarnu/ap
 import {
   CONTRACT_STATUSES,
   perGuestTotal,
+  resolveDueDate,
+  todayIso,
   PRICING_TYPES,
   VAT_MODES,
   type ContractStatus,
@@ -11,7 +13,7 @@ import {
   type ScheduleStatus,
   type VatMode,
 } from "@sagarnu/domain";
-import { formatILS, formatNumber, he } from "@sagarnu/i18n";
+import { formatDate, formatILS, formatNumber, he } from "@sagarnu/i18n";
 import {
   createContractSchema,
   scheduleItemSchema,
@@ -29,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { cn } from "@/lib/cn";
 import { MoneyInput } from "@/components/ui/money-input";
 import { fieldErrors, isConfirmationRequired, toastError } from "@/lib/errors";
 import { useCan } from "@/lib/use-event-id";
@@ -167,6 +170,48 @@ function toScheduleInput(row: ScheduleRow): ScheduleItemInput {
     relativeAnchor: !relative ? null : row.timing === "after_signing" ? "signing" : "event",
     relativeDays: !relative || row.days == null ? null : row.timing === "before_event" ? -row.days : row.days,
   };
+}
+
+/** The date a relative row resolves to right now; it follows later changes to the event or signing date. */
+function ComputedDueDate({
+  row,
+  eventDate,
+  signedOn,
+}: {
+  row: ScheduleRow;
+  eventDate: string | null;
+  signedOn: string;
+}) {
+  const bySigning = row.timing === "after_signing";
+  const anchor = bySigning ? orNull(signedOn) : eventDate;
+  if (!anchor) {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-muted">
+        <CalendarClock className="size-3.5 shrink-0" />
+        {bySigning ? "התאריך יחושב לבד אחרי שימולא תאריך החתימה" : "התאריך יחושב לבד כשייקבע תאריך האירוע"}
+      </p>
+    );
+  }
+  if (row.days == null) return null;
+  const { relativeAnchor = null, relativeDays = null } = toScheduleInput(row);
+  const due = resolveDueDate(
+    { dueDate: null, relativeAnchor, relativeDays },
+    { eventDate, signingDate: orNull(signedOn) },
+  );
+  if (!due) return null;
+  const past = due < todayIso();
+  return (
+    <p
+      className={cn("flex items-center gap-1.5 text-xs", past ? "text-warning" : "text-muted")}
+      data-testid={`schedule-${row.key}-computed`}
+    >
+      <CalendarClock className="size-3.5 shrink-0" />
+      <span>
+        יוצא ב־<span className="num font-medium text-ink">{formatDate(due)}</span>
+        {past ? " (התאריך כבר עבר)" : bySigning ? "" : ", ויתעדכן לבד אם תאריך האירוע ישתנה"}
+      </span>
+    </p>
+  );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -887,6 +932,13 @@ export function ContractDialog({
                         )}
                       </div>
                     </div>
+                    {row.timing !== "date" && (
+                      <ComputedDueDate
+                        row={row}
+                        eventDate={event.data?.eventDate ?? null}
+                        signedOn={form.signedOn}
+                      />
+                    )}
                   </fieldset>
                 );
               })}
