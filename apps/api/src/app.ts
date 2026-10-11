@@ -30,7 +30,9 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
   await app.register(cors, { origin: [env.WEB_ORIGIN], credentials: true });
   await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
 
-  app.get("/v1/health", async () => ({ ok: true }));
+  // `commit` shows which version is live (Railway sets RAILWAY_GIT_COMMIT_SHA on every deploy).
+  const commit = process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? null;
+  app.get("/v1/health", async () => ({ ok: true, commit }));
 
   // Better Auth handles everything under /v1/auth (sign-in, sign-up, OAuth callbacks, reset, verify).
   app.route({
