@@ -6,6 +6,7 @@ import type { EmailProvider } from "@sagarnu/notifications";
 import Fastify, { type FastifyServerOptions } from "fastify";
 import { createAuth } from "./auth";
 import type { Env } from "./env";
+import { createAuthAttemptLimiter } from "./lib/auth-limits";
 import { requireUser } from "./lib/context";
 import { registerErrorHandler } from "./lib/errors";
 import { contractRoutes } from "./routes/contracts";
@@ -42,6 +43,8 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     method: ["GET", "POST"],
     url: "/v1/auth/*",
     config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+    // Login and password reset: 5 a minute per IP and per email.
+    preHandler: createAuthAttemptLimiter(),
     async handler(req, reply) {
       const headers = new Headers();
       for (const [key, value] of Object.entries(req.headers)) {
