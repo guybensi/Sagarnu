@@ -1,7 +1,7 @@
 "use client";
 
 import { endpoints, useContract } from "@sagarnu/api-client";
-import { CONTRACT_STATUSES, todayIso, type ContractStatus } from "@sagarnu/domain";
+import { todayIso } from "@sagarnu/domain";
 import { formatDate, formatILS, he } from "@sagarnu/i18n";
 import type { ScheduleItemDto } from "@sagarnu/schemas";
 import { Camera, Check, AtSign, FileText, Globe, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react";
@@ -12,19 +12,14 @@ import { PaymentRow } from "@/components/payments/payment-row";
 import { Button } from "@/components/ui/button";
 import { Badge, Spinner } from "@/components/ui/card";
 import { ConfirmDialog, Drawer } from "@/components/ui/dialog";
-import { Input, Select } from "@/components/ui/form";
-import { MoneyInput } from "@/components/ui/money-input";
 import { isConfirmationRequired, toastError } from "@/lib/errors";
 import { useCan } from "@/lib/use-event-id";
 import { useRefreshEvent } from "@/lib/use-refresh";
 import { ContractDialog } from "./contract-dialog";
-import { scheduleTone } from "./status";
+import { contractTone, scheduleTone } from "./status";
 
 type Pending =
-  | { kind: "status"; status: ContractStatus; count: number }
-  | { kind: "delete"; paymentCount?: number; paidAgorot?: number }
-  | { kind: "deletePayment"; id: string }
-  | { kind: "deleteItem"; item: ScheduleItemDto };
+  { kind: "delete"; paymentCount?: number; paidAgorot?: number } | { kind: "deletePayment"; id: string };
 
 /** "7 ימים לפני האירוע", "ביום החתימה", "יום אחרי האירוע" … */
 export function relativeTiming(anchor: "event" | "signing", days: number): string {
@@ -36,60 +31,15 @@ export function relativeTiming(anchor: "event" | "signing", days: number): strin
 }
 
 function ScheduleItemRow({
-  eventId,
   item,
-  editable,
+  canPay,
   onPay,
-  onDelete,
 }: {
-  eventId: string;
   item: ScheduleItemDto;
-  editable: boolean;
+  canPay: boolean;
   onPay: () => void;
-  onDelete: () => void;
 }) {
-  const refresh = useRefreshEvent(eventId);
-  const [editing, setEditing] = useState(false);
-  const [amount, setAmount] = useState(item.amountAgorot);
-  const [date, setDate] = useState(item.dueDate ?? "");
   const overdue = item.status === "pending" && item.dueDate != null && item.dueDate < todayIso();
-
-  const save = async () => {
-    try {
-      await endpoints.schedule.update(eventId, item.id, {
-        amountAgorot: amount,
-        percent: amount != null ? null : item.percent,
-        dueDate: date || null,
-        relativeAnchor: null,
-        relativeDays: null,
-      });
-      await refresh();
-      setEditing(false);
-    } catch (e) {
-      toastError(e);
-    }
-  };
-
-  if (editing) {
-    return (
-      <li className="grid gap-2 rounded-xl border border-brand-200 bg-brand-50/50 p-3">
-        <p className="text-sm font-medium">{item.label}</p>
-        <div className="grid grid-cols-2 gap-2">
-          <MoneyInput value={amount} onChange={setAmount} />
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-            ביטול
-          </Button>
-          <Button size="sm" onClick={save}>
-            שמירה
-          </Button>
-        </div>
-      </li>
-    );
-  }
-
   return (
     <li className="flex items-center gap-3 rounded-xl border border-line p-3">
       <div className="min-w-0 flex-1">
@@ -113,76 +63,13 @@ function ScheduleItemRow({
             <p className="num text-xs text-muted">נותר {formatILS(item.remainingAgorot)}</p>
           )}
       </div>
-      {editable && item.status === "pending" && (
-        <div className="flex">
-          <Button size="icon" variant="ghost" aria-label="סמן כשולם" title="סמן כשולם" onClick={onPay}>
-            <Check className="size-4 text-success" />
-          </Button>
-          <Button size="icon" variant="ghost" aria-label="עריכה" onClick={() => setEditing(true)}>
-            <Pencil className="size-4 text-muted" />
-          </Button>
-          <Button size="icon" variant="ghost" aria-label="מחיקה" onClick={onDelete}>
-            <Trash2 className="size-4 text-muted" />
-          </Button>
-        </div>
+      {canPay && item.status === "pending" && (
+        <Button size="sm" variant="secondary" onClick={onPay}>
+          <Check className="size-3.5 text-success" />
+          סמן כשולם
+        </Button>
       )}
     </li>
-  );
-}
-
-function AddScheduleItem({
-  eventId,
-  contractId,
-  onDone,
-}: {
-  eventId: string;
-  contractId: string;
-  onDone: () => void;
-}) {
-  const refresh = useRefreshEvent(eventId);
-  const [label, setLabel] = useState("");
-  const [amount, setAmount] = useState<number | null>(null);
-  const [date, setDate] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const save = async () => {
-    if (!amount || !date) return toast.error("צריך סכום ותאריך");
-    setSaving(true);
-    try {
-      await endpoints.schedule.add(eventId, contractId, {
-        label: label.trim() || "תשלום",
-        amountAgorot: amount,
-        dueDate: date,
-      });
-      await refresh();
-      onDone();
-    } catch (e) {
-      toastError(e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="grid gap-2 rounded-xl border border-dashed border-brand-200 p-3">
-      <Input
-        placeholder="שם התשלום (למשל: תשלום שני)"
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <MoneyInput value={amount} onChange={setAmount} />
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={onDone}>
-          ביטול
-        </Button>
-        <Button size="sm" onClick={save} loading={saving}>
-          הוספה
-        </Button>
-      </div>
-    </div>
   );
 }
 
@@ -200,41 +87,9 @@ export function VendorDrawer({
   const editable = useCan("contract.write");
   const [editOpen, setEditOpen] = useState(false);
   const [payFor, setPayFor] = useState<{ itemId: string | null } | null>(null);
-  const [adding, setAdding] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
   const c = contract.data;
-
-  const changeStatus = async (status: ContractStatus, confirm = false) => {
-    if (!c) return;
-    setBusy(true);
-    try {
-      const updated = await endpoints.contracts.setStatus(eventId, c.id, status, confirm);
-      setPending(null);
-      await refresh();
-      const cancelled = updated.schedule.filter((s) => s.status === "cancelled");
-      if (status === "approved" && cancelled.length > 0) {
-        toast("החוזה אושר מחדש", {
-          description: `יש ${cancelled.length} מועדי תשלום שבוטלו. לשחזר אותם?`,
-          action: {
-            label: "שחזור",
-            onClick: async () => {
-              await Promise.all(
-                cancelled.map((s) => endpoints.schedule.update(eventId, s.id, { status: "pending" })),
-              );
-              await refresh();
-            },
-          },
-        });
-      }
-    } catch (e) {
-      if (isConfirmationRequired(e))
-        setPending({ kind: "status", status, count: Number(e.details?.pendingCount ?? 0) });
-      else toastError(e);
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const remove = async (confirm = false) => {
     if (!c) return;
@@ -260,12 +115,10 @@ export function VendorDrawer({
 
   const runPending = async () => {
     if (!pending) return;
-    if (pending.kind === "status") return changeStatus(pending.status, true);
     if (pending.kind === "delete") return remove(pending.paymentCount != null);
     setBusy(true);
     try {
-      if (pending.kind === "deletePayment") await endpoints.payments.remove(eventId, pending.id);
-      else await endpoints.schedule.remove(eventId, pending.item.id);
+      await endpoints.payments.remove(eventId, pending.id);
       await refresh();
       setPending(null);
     } catch (e) {
@@ -290,7 +143,9 @@ export function VendorDrawer({
         open={contractId != null}
         onOpenChange={(o) => !o && onClose()}
         title={c?.vendorName ?? "…"}
-        description={c ? he.contractStatus[c.status] : undefined}
+        description={
+          c ? <Badge tone={contractTone[c.status]}>{he.contractStatus[c.status]}</Badge> : undefined
+        }
         footer={
           c &&
           editable && (
@@ -319,21 +174,6 @@ export function VendorDrawer({
           <Spinner />
         ) : (
           <div className="grid gap-6">
-            {editable && (
-              <Select
-                aria-label="סטטוס"
-                value={c.status}
-                disabled={busy}
-                onChange={(e) => changeStatus(e.target.value as ContractStatus)}
-              >
-                {CONTRACT_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {he.contractStatus[s]}
-                  </option>
-                ))}
-              </Select>
-            )}
-
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { label: "סה״כ", value: c.totalAmountAgorot },
@@ -388,35 +228,28 @@ export function VendorDrawer({
             <section>
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">מועדי תשלום</h3>
-                {editable && !adding && (
-                  <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
-                    <Plus className="size-4" />
-                    מועד
+                {editable && (
+                  <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)}>
+                    <Pencil className="size-4" />
+                    עריכת המועדים
                   </Button>
                 )}
               </div>
               <ul className="grid gap-2">
                 {c.schedule.map((item) => (
                   <ScheduleItemRow
-                    key={`${item.id}-${item.amountAgorot}-${item.dueDate}`}
-                    eventId={eventId}
+                    key={item.id}
                     item={item}
-                    editable={editable}
+                    canPay={editable}
                     onPay={() => setPayFor({ itemId: item.id })}
-                    onDelete={() => setPending({ kind: "deleteItem", item })}
                   />
                 ))}
-                {c.schedule.length === 0 && !adding && (
+                {c.schedule.length === 0 && (
                   <li className="rounded-xl bg-soft p-4 text-center text-sm text-muted">
                     עוד אין מועדי תשלום
                   </li>
                 )}
               </ul>
-              {adding && (
-                <div className="mt-2">
-                  <AddScheduleItem eventId={eventId} contractId={c.id} onDone={() => setAdding(false)} />
-                </div>
-              )}
             </section>
 
             <section>
@@ -485,7 +318,13 @@ export function VendorDrawer({
 
       {c && (
         <>
-          <ContractDialog eventId={eventId} contract={c} open={editOpen} onOpenChange={setEditOpen} />
+          <ContractDialog
+            eventId={eventId}
+            contract={c}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            initialMode="edit"
+          />
           <PaymentDialog
             eventId={eventId}
             contractId={c.id}
@@ -499,26 +338,13 @@ export function VendorDrawer({
       <ConfirmDialog
         open={pending != null}
         onOpenChange={(o) => !o && setPending(null)}
-        danger={pending?.kind !== "status"}
+        danger
         loading={busy}
         onConfirm={runPending}
-        title={
-          pending?.kind === "status"
-            ? `לשנות ל"${he.contractStatus[pending.status]}"?`
-            : pending?.kind === "delete"
-              ? "למחוק את החוזה?"
-              : pending?.kind === "deletePayment"
-                ? "למחוק את התשלום?"
-                : "למחוק את מועד התשלום?"
-        }
-        confirmLabel={pending?.kind === "status" ? "כן, לשנות" : "מחיקה"}
+        title={pending?.kind === "delete" ? "למחוק את החוזה?" : "למחוק את התשלום?"}
+        confirmLabel="מחיקה"
         description={
-          pending?.kind === "status" ? (
-            <>
-              {pending.count} מועדי תשלום שעוד לא שולמו יבוטלו, וגם התזכורות שלהם. תשלומים שכבר בוצעו נשמרים
-              ונספרים בתקציב.
-            </>
-          ) : pending?.kind === "delete" ? (
+          pending?.kind === "delete" ? (
             pending.paymentCount ? (
               <>
                 לחוזה הזה רשומים {pending.paymentCount} תשלומים בסך{" "}
@@ -528,8 +354,6 @@ export function VendorDrawer({
             ) : (
               "החוזה ומועדי התשלום שלו יימחקו."
             )
-          ) : pending?.kind === "deleteItem" ? (
-            `"${pending.item.label}" יוסר מפריסת התשלומים.`
           ) : (
             "התשלום יוסר מההיסטוריה ומהסיכומים."
           )

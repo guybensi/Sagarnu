@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode, SelectHTMLAttributes, TextareaHTMLAttri
 import { cn } from "@/lib/cn";
 
 const control =
-  "w-full rounded-xl border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-muted/70 transition-colors focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100 disabled:bg-soft disabled:text-muted aria-invalid:border-danger";
+  "w-full rounded-xl border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-muted/70 transition-colors focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100 disabled:cursor-default disabled:bg-soft/50 disabled:text-ink disabled:opacity-100 aria-invalid:border-danger";
 
 /** React 19 passes `ref` as a prop, so react-hook-form's `register()` works without forwardRef. */
 export function Input({ className, ...props }: ComponentProps<"input">) {

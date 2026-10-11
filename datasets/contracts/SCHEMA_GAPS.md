@@ -51,9 +51,9 @@ To compare a model output in the planned format with a label:
 
 ## 4. Schema vs. UI vs. API
 
-- **`vendorBusinessId` has no input in the contract form.** It is in the schema, the DB, the form state and the API, but nothing on screen lets a user see or edit it.
-- **"After the event" installments**: the schema allows `relativeAnchor: "event"` with positive `relativeDays`, but the form only offers "ימים לפני האירוע" and "ימים אחרי החתימה".
-- **Schedule editing**: on an existing contract, the edit dialog has no schedule section (items are edited one by one in the vendor drawer) — fine for users, but an AI pre-fill of a _new_ contract is the only place a whole schedule is submitted at once.
+- ~~**`vendorBusinessId` has no input in the contract form.**~~ Fixed 2026-10-11: the form has a ח.פ / ע.מ field.
+- ~~**"After the event" installments** missing from the form.~~ Fixed 2026-10-11: "ימים אחרי האירוע" is offered.
+- **Schedule editing**: since 2026-10-11 the contract form edits the whole schedule (add / change / remove pending items) on save; paid and cancelled items are locked.
 - **Percent + amount**: both may be stored; the app silently uses the amount (`resolveScheduleAmount`). An extraction that fills both is not rejected.
 - **Fixed + relative date**: both may be stored; the relative one wins (`resolveDueDate`).
 - **VAT**: one `vatMode` per contract, no separate before/after-VAT amounts, and open question 7 in the plan (normalize everything to "including VAT"?) is unanswered. Installments can't carry their own VAT status.

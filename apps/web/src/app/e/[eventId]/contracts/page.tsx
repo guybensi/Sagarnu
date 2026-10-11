@@ -1,6 +1,6 @@
 "use client";
 
-import { endpoints, useCategories, useContracts } from "@sagarnu/api-client";
+import { endpoints, useCategories, useContract, useContracts } from "@sagarnu/api-client";
 import { formatILS, he } from "@sagarnu/i18n";
 import type { ContractDto } from "@sagarnu/schemas";
 import { FilePlus2, FileText, PenLine, Plus, Sparkles, Upload } from "lucide-react";
@@ -112,6 +112,9 @@ function ContractsView() {
   const canWrite = useCan("contract.write");
   const [tab, setTab] = useState<string>(params.get("category") ?? "all");
   const [openId, setOpenId] = useState<string | null>(null);
+  /** Contract shown in the locked form; its full details (schedule) are fetched on demand. */
+  const [viewId, setViewId] = useState<string | null>(null);
+  const viewed = useContract(eventId, viewId);
   const [chooser, setChooser] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newCategory, setNewCategory] = useState(false);
@@ -207,7 +210,7 @@ function ContractsView() {
           {list.map((c) => (
             <div key={c.id} className="flex flex-col gap-1.5">
               {tab === "all" && <span className="ps-1 text-xs text-muted">{categoryName(c.categoryId)}</span>}
-              <ContractCard contract={c} onOpen={() => setOpenId(c.id)} />
+              <ContractCard contract={c} onOpen={() => setViewId(c.id)} />
             </div>
           ))}
         </div>
@@ -268,6 +271,18 @@ function ContractsView() {
         onOpenChange={setNewCategory}
         onCreated={setTab}
       />
+      {viewed.data && (
+        <ContractDialog
+          eventId={eventId}
+          contract={viewed.data}
+          open={viewId != null}
+          onOpenChange={(o) => !o && setViewId(null)}
+          onOpenPayments={() => {
+            setOpenId(viewId);
+            setViewId(null);
+          }}
+        />
+      )}
       <VendorDrawer eventId={eventId} contractId={openId} onClose={() => setOpenId(null)} />
     </div>
   );

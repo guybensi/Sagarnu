@@ -84,10 +84,10 @@ export function Chips<T extends string>({
           type="button"
           onClick={() => onChange(value === o ? null : o)}
           className={cn(
-            "rounded-full border px-4 py-1.5 text-sm transition-colors",
+            "rounded-full border px-4 py-1.5 text-sm transition-colors disabled:cursor-default",
             value === o
               ? "border-brand-500 bg-brand-50 font-medium text-brand-700"
-              : "border-line hover:bg-soft",
+              : "border-line enabled:hover:bg-soft",
           )}
         >
           {labels[o]}
