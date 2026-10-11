@@ -11,6 +11,8 @@ import type {
   ExpensesDto,
   MeDto,
   MemberDto,
+  PaymentFileDto,
+  PaymentFileUploadInput,
   PaymentInput,
   PaymentResultDto,
   ScheduleItemInput,
@@ -88,6 +90,10 @@ export const endpoints = {
       api<PaymentResultDto>(`${ev(eventId)}/payments/${paymentId}`, { method: "PATCH", body }),
     remove: (eventId: string, paymentId: string) =>
       api<void>(`${ev(eventId)}/payments/${paymentId}`, { method: "DELETE" }),
+    uploadFile: (eventId: string, paymentId: string, body: PaymentFileUploadInput) =>
+      api<PaymentFileDto>(`${ev(eventId)}/payments/${paymentId}/files`, { method: "POST", body }),
+    removeFile: (eventId: string, fileId: string) =>
+      api<void>(`${ev(eventId)}/files/${fileId}`, { method: "DELETE" }),
   },
   expenses: {
     get: (eventId: string) => api<ExpensesDto>(`${ev(eventId)}/expenses`),

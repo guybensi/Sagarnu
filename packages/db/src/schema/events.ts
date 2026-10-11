@@ -1,7 +1,6 @@
 import { isNull } from "drizzle-orm";
 import {
   boolean,
-  customType,
   date,
   index,
   integer,
@@ -15,7 +14,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { agorot, createdAt, deletedAt, id, timestamps } from "./columns";
+import { agorot, bytea, createdAt, deletedAt, id, timestamps } from "./columns";
 import { ceremonyType, eventStyle, kashrut, role, timeOfDay } from "./enums";
 
 /** Questionnaire fields are nullable: null means "not known yet". */
@@ -44,11 +43,6 @@ export const event = pgTable("event", {
     .references(() => user.id),
   deletedAt: deletedAt(),
   ...timestamps,
-});
-
-const bytea = customType<{ data: Buffer; driverData: Buffer | Uint8Array }>({
-  dataType: () => "bytea",
-  fromDriver: (value) => Buffer.from(value),
 });
 
 /**

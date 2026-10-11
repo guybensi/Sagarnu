@@ -89,6 +89,7 @@ export const he = {
     required: "שדה חובה",
     invalid_image: "קובץ התמונה לא נתמך",
     invalid_url: "קישור לא תקין",
+    invalid_file: "אפשר להעלות PDF או תמונה (JPG, PNG, WebP)",
   },
 } as const;
 

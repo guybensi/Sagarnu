@@ -10,12 +10,18 @@ import {
   type ContractBalance,
   type IsoDate,
 } from "@sagarnu/domain";
-import type { ContractDetailDto, ContractDto, DueItemDto, ScheduleItemDto } from "@sagarnu/schemas";
+import type {
+  ContractDetailDto,
+  ContractDto,
+  DueItemDto,
+  PaymentDto,
+  ScheduleItemDto,
+} from "@sagarnu/schemas";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type { EventRow } from "../lib/access";
-import { toPaymentDto } from "../lib/mappers";
+import { toPaymentDto, type PaymentFileMeta } from "../lib/mappers";
 
-const { contract, payment, paymentScheduleItem } = schema;
+const { contract, payment, paymentFile, paymentScheduleItem } = schema;
 
 export type ContractRow = typeof contract.$inferSelect;
 export type ScheduleRow = typeof paymentScheduleItem.$inferSelect;
@@ -51,6 +57,7 @@ export class Ledger {
     readonly contracts: ContractRow[],
     private readonly scheduleRows: ScheduleRow[],
     readonly payments: PaymentRow[],
+    private readonly files: PaymentFileMeta[] = [],
   ) {
     const byId = new Map(contracts.map((c) => [c.id, c]));
     for (const row of scheduleRows) {
@@ -126,8 +133,15 @@ export class Ledger {
       payments: this.payments
         .filter((p) => p.contractId === c.id)
         .sort((a, b) => b.paidOn.localeCompare(a.paidOn))
-        .map(toPaymentDto),
+        .map((p) => this.paymentDto(p)),
     };
+  }
+
+  paymentDto(row: PaymentRow): PaymentDto {
+    return toPaymentDto(
+      row,
+      this.files.filter((f) => f.paymentId === row.id),
+    );
   }
 
   private toDue(c: ContractRow, item: ResolvedItem): DueItemDto {
@@ -195,8 +209,34 @@ export async function loadLedger(db: Db | Tx, ev: EventRow, contractId?: string)
       .from(payment)
       .where(and(inArray(payment.contractId, ids), isNull(payment.deletedAt))),
   ]);
-  return new Ledger(ev, contracts, items, payments);
+  const files =
+    payments.length === 0
+      ? []
+      : await db
+          .select(FILE_META)
+          .from(paymentFile)
+          .where(
+            inArray(
+              paymentFile.paymentId,
+              payments.map((p) => p.id),
+            ),
+          )
+          .orderBy(asc(paymentFile.createdAt));
+  return new Ledger(ev, contracts, items, payments, files);
 }
+
+/** Every column except the file bytes. */
+export const FILE_META = {
+  id: paymentFile.id,
+  paymentId: paymentFile.paymentId,
+  eventId: paymentFile.eventId,
+  kind: paymentFile.kind,
+  name: paymentFile.name,
+  mime: paymentFile.mime,
+  sizeBytes: paymentFile.sizeBytes,
+  uploadedBy: paymentFile.uploadedBy,
+  createdAt: paymentFile.createdAt,
+};
 
 /** An item is `paid` once payments assigned to it cover it; partial payment keeps it pending. */
 export async function refreshScheduleStatuses(tx: Tx, ev: EventRow, c: ContractRow): Promise<void> {

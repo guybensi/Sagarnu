@@ -1,7 +1,13 @@
 "use client";
 
 import { endpoints, useContract } from "@sagarnu/api-client";
-import { PAYMENT_METHODS, todayIso, type PaymentMethod } from "@sagarnu/domain";
+import {
+  PAYMENT_FILE_KINDS,
+  PAYMENT_METHODS,
+  todayIso,
+  type PaymentFileKind,
+  type PaymentMethod,
+} from "@sagarnu/domain";
 import { formatDate, formatILS, he } from "@sagarnu/i18n";
 import { paymentSchema, type PaymentResultDto } from "@sagarnu/schemas";
 import { useEffect, useState } from "react";
@@ -12,7 +18,10 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { MoneyInput } from "@/components/ui/money-input";
 import { fieldErrors, isConfirmationRequired, toastError } from "@/lib/errors";
 import { useRefreshEvent } from "@/lib/use-refresh";
+import { FilePick, type PickedFile } from "./file-pick";
 import { NextPaymentPrompt } from "./next-payment-prompt";
+
+const NO_FILES: Record<PaymentFileKind, PickedFile | null> = { receipt: null, confirmation: null };
 
 interface FormState {
   amountAgorot: number | null;
@@ -44,6 +53,7 @@ export function PaymentDialog({
   const [saving, setSaving] = useState(false);
   const [overpay, setOverpay] = useState<number | null>(null);
   const [result, setResult] = useState<PaymentResultDto | null>(null);
+  const [files, setFiles] = useState<Record<PaymentFileKind, PickedFile | null>>(NO_FILES);
 
   const openItems = contract.data?.schedule.filter((s) => s.status === "pending") ?? [];
 
@@ -66,6 +76,7 @@ export function PaymentDialog({
     if (!open) {
       setForm(null);
       setErrors({});
+      setFiles(NO_FILES);
     }
   }, [open]);
 
@@ -90,8 +101,23 @@ export function PaymentDialog({
     try {
       const res = await endpoints.payments.create(eventId, contractId, parsed.data);
       setOverpay(null);
+      // The payment is saved either way; a failed upload can be retried from the vendor panel.
+      const uploads = PAYMENT_FILE_KINDS.flatMap((kind) => {
+        const file = files[kind];
+        return file
+          ? [
+              endpoints.payments.uploadFile(eventId, res.payment.id, {
+                kind,
+                name: file.name,
+                dataUrl: file.dataUrl,
+              }),
+            ]
+          : [];
+      });
+      const failed = (await Promise.allSettled(uploads)).filter((r) => r.status === "rejected").length;
       await refresh();
-      toast.success("התשלום נשמר");
+      if (failed) toast.warning("התשלום נשמר, אבל קובץ לא הועלה. אפשר לצרף אותו מהיסטוריית התשלומים");
+      else toast.success("התשלום נשמר");
       onOpenChange(false);
       if ((res.remainingAgorot ?? 0) > 0) setResult(res);
     } catch (e) {
@@ -184,30 +210,40 @@ export function PaymentDialog({
               </Field>
             </div>
             <Field
-              label="קישור לקבלה"
+              label="קבלה"
               htmlFor="receiptUrl"
               error={errors.receiptUrl && "קישור לא תקין (https://…)"}
+              hint="קישור (למשל לדרייב) או קובץ PDF / תמונה"
             >
-              <Input
-                id="receiptUrl"
-                dir="ltr"
-                placeholder="https://"
-                value={form.receiptUrl}
-                onChange={(e) => set("receiptUrl", e.target.value)}
-              />
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+                <Input
+                  id="receiptUrl"
+                  dir="ltr"
+                  placeholder="https://"
+                  value={form.receiptUrl}
+                  onChange={(e) => set("receiptUrl", e.target.value)}
+                />
+                <FilePick value={files.receipt} onChange={(f) => setFiles((s) => ({ ...s, receipt: f }))} />
+              </div>
             </Field>
             <Field
-              label="קישור לאישור העברה"
+              label="אישור העברה"
               htmlFor="confirmationUrl"
               error={errors.confirmationUrl && "קישור לא תקין (https://…)"}
             >
-              <Input
-                id="confirmationUrl"
-                dir="ltr"
-                placeholder="https://"
-                value={form.confirmationUrl}
-                onChange={(e) => set("confirmationUrl", e.target.value)}
-              />
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+                <Input
+                  id="confirmationUrl"
+                  dir="ltr"
+                  placeholder="https://"
+                  value={form.confirmationUrl}
+                  onChange={(e) => set("confirmationUrl", e.target.value)}
+                />
+                <FilePick
+                  value={files.confirmation}
+                  onChange={(f) => setFiles((s) => ({ ...s, confirmation: f }))}
+                />
+              </div>
             </Field>
             <Field label="הערות" htmlFor="notes">
               <Textarea

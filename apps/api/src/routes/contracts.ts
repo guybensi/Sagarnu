@@ -17,7 +17,6 @@ import { assertUuid, eventAccess, type EventRow } from "../lib/access";
 import { audit, diffOf } from "../lib/audit";
 import { currentUser } from "../lib/context";
 import { AppError, notFound } from "../lib/errors";
-import { toPaymentDto } from "../lib/mappers";
 import { loadLedger, refreshScheduleStatuses, type ContractRow } from "../services/ledger";
 
 const { category, contract, payment, paymentScheduleItem } = schema;
@@ -372,7 +371,7 @@ export async function contractRoutes(app: FastifyInstance): Promise<void> {
     const fresh = ledger.contracts[0]!;
     const row = ledger.payments.find((p) => p.id === paymentId)!;
     return {
-      payment: toPaymentDto(row),
+      payment: ledger.paymentDto(row),
       remainingAgorot: ledger.balance(fresh).remainingAgorot,
       nextDue: ledger.nextDue(fresh) ?? ledger.overdue().find((d) => d.contractId === c.id) ?? null,
     };

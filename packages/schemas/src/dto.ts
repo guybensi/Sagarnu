@@ -5,6 +5,7 @@ import type {
   ExpenseSummary,
   IsoDate,
   Kashrut,
+  PaymentFileKind,
   PaymentMethod,
   PricingType,
   RelativeAnchor,
@@ -89,6 +90,18 @@ export interface PaymentDto {
   receiptUrl: string | null;
   confirmationUrl: string | null;
   notes: string | null;
+  createdAt: string;
+  files: PaymentFileDto[];
+}
+
+export interface PaymentFileDto {
+  id: string;
+  kind: PaymentFileKind;
+  name: string;
+  mime: string;
+  sizeBytes: number;
+  /** Relative URL; only event members can open it. */
+  url: string;
   createdAt: string;
 }
 

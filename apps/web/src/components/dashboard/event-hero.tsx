@@ -11,20 +11,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { toastError } from "@/lib/errors";
+import { resizeImage } from "@/lib/files";
 import { useCan } from "@/lib/use-event-id";
 import { useRefreshEvent } from "@/lib/use-refresh";
-
-/** Phone photos are several MB; a 1600px JPEG is plenty for a banner and stays a few hundred KB. */
-async function resizeToJpeg(file: File, maxSide = 1600, quality = 0.85): Promise<string> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return canvas.toDataURL("image/jpeg", quality);
-}
 
 /** Re-renders after midnight so "days left" ticks over without a reload. */
 function useToday(): string {
@@ -45,7 +34,7 @@ function PhotoControls({ event }: { event: EventDto }) {
     if (!file) return;
     setBusy(true);
     try {
-      await endpoints.events.setCover(event.id, await resizeToJpeg(file));
+      await endpoints.events.setCover(event.id, await resizeImage(file, 1600));
       await refresh();
       toast.success("התמונה נשמרה");
     } catch (e) {

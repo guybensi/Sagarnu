@@ -12,6 +12,7 @@ import { contractRoutes } from "./routes/contracts";
 import { coverRoutes } from "./routes/cover";
 import { eventRoutes } from "./routes/events";
 import { meRoutes } from "./routes/me";
+import { paymentFileRoutes } from "./routes/payment-files";
 
 export interface AppDeps {
   env: Env;
@@ -67,6 +68,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     await protectedApp.register(eventRoutes);
     await protectedApp.register(contractRoutes);
     await protectedApp.register(coverRoutes);
+    await protectedApp.register(paymentFileRoutes);
   });
 
   return app;

@@ -12,10 +12,11 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { agorot, createdAt, deletedAt, id, timestamps } from "./columns";
+import { agorot, bytea, createdAt, deletedAt, id, timestamps } from "./columns";
 import {
   contractSource,
   contractStatus,
+  paymentFileKind,
   paymentMethod,
   pricingType,
   relativeAnchor,
@@ -121,6 +122,31 @@ export const payment = pgTable(
     ...timestamps,
   },
   (t) => [index().on(t.contractId), check("payment_amount_positive", sql`${t.amountAgorot} > 0`)],
+);
+
+/**
+ * A receipt or transfer confirmation uploaded for a payment. Metadata is queried with the payment;
+ * `data` is only read when the file itself is downloaded. Moves to R2 in phase 2.
+ */
+export const paymentFile = pgTable(
+  "payment_file",
+  {
+    id: id(),
+    paymentId: uuid()
+      .notNull()
+      .references(() => payment.id, { onDelete: "cascade" }),
+    eventId: uuid()
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    kind: paymentFileKind().notNull(),
+    name: text().notNull(),
+    mime: text().notNull(),
+    sizeBytes: integer().notNull(),
+    data: bytea().notNull(),
+    uploadedBy: uuid().references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.paymentId)],
 );
 
 export const auditLog = pgTable(

@@ -4,24 +4,11 @@ import { endpoints, useContract } from "@sagarnu/api-client";
 import { CONTRACT_STATUSES, todayIso, type ContractStatus } from "@sagarnu/domain";
 import { formatDate, formatILS, he } from "@sagarnu/i18n";
 import type { ScheduleItemDto } from "@sagarnu/schemas";
-import {
-  Camera,
-  Check,
-  ExternalLink,
-  AtSign,
-  FileText,
-  Globe,
-  Mail,
-  Pencil,
-  Phone,
-  Plus,
-  Receipt,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Camera, Check, AtSign, FileText, Globe, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PaymentDialog } from "@/components/payments/payment-dialog";
+import { PaymentRow } from "@/components/payments/payment-row";
 import { Button } from "@/components/ui/button";
 import { Badge, Spinner } from "@/components/ui/card";
 import { ConfirmDialog, Drawer } from "@/components/ui/dialog";
@@ -38,6 +25,15 @@ type Pending =
   | { kind: "delete"; paymentCount?: number; paidAgorot?: number }
   | { kind: "deletePayment"; id: string }
   | { kind: "deleteItem"; item: ScheduleItemDto };
+
+/** "7 ימים לפני האירוע", "ביום החתימה", "יום אחרי האירוע" … */
+export function relativeTiming(anchor: "event" | "signing", days: number): string {
+  const what = anchor === "event" ? "האירוע" : "החתימה";
+  if (days === 0) return `ביום ${what}`;
+  const n = Math.abs(days);
+  const count = n === 1 ? "יום" : `${n} ימים`;
+  return `${count} ${days < 0 ? "לפני" : "אחרי"} ${what}`;
+}
 
 function ScheduleItemRow({
   eventId,
@@ -103,10 +99,10 @@ function ScheduleItemRow({
             {overdue ? "באיחור" : he.scheduleStatus[item.status]}
           </Badge>
         </div>
-        <p className="num mt-0.5 text-xs text-muted">
-          {item.dueDate ? formatDate(item.dueDate) : "ללא תאריך"}
-          {item.relativeAnchor &&
-            ` (${Math.abs(item.relativeDays ?? 0)} ימים ${item.relativeAnchor === "event" ? "לפני האירוע" : "אחרי החתימה"})`}
+        {/* Only the date is LTR; the Hebrew around it must keep RTL order. */}
+        <p className="mt-0.5 text-xs text-muted">
+          {item.dueDate ? <span className="num">{formatDate(item.dueDate)}</span> : "ללא תאריך"}
+          {item.relativeAnchor && ` (${relativeTiming(item.relativeAnchor, item.relativeDays ?? 0)})`}
         </p>
       </div>
       <div className="text-end">
@@ -427,41 +423,14 @@ export function VendorDrawer({
               <h3 className="mb-3 font-semibold">היסטוריית תשלומים</h3>
               <ul className="grid gap-2">
                 {c.payments.map((p) => (
-                  <li key={p.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                    <div className="rounded-lg bg-success-soft p-2 text-success">
-                      <Receipt className="size-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="num text-sm font-semibold">{formatILS(p.amountAgorot)}</p>
-                      <p className="text-xs text-muted">
-                        <span className="num">{formatDate(p.paidOn)}</span> · {he.paymentMethod[p.method]}
-                        {p.scheduleItemId &&
-                          ` · ${c.schedule.find((s) => s.id === p.scheduleItemId)?.label ?? ""}`}
-                      </p>
-                    </div>
-                    {[p.receiptUrl, p.confirmationUrl].filter(Boolean).map((href, i) => (
-                      <a
-                        key={i}
-                        href={href!}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted hover:text-ink"
-                        aria-label={i === 0 ? "קבלה" : "אישור"}
-                      >
-                        <ExternalLink className="size-4" />
-                      </a>
-                    ))}
-                    {editable && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label="מחיקת תשלום"
-                        onClick={() => setPending({ kind: "deletePayment", id: p.id })}
-                      >
-                        <X className="size-4 text-muted" />
-                      </Button>
-                    )}
-                  </li>
+                  <PaymentRow
+                    key={p.id}
+                    eventId={eventId}
+                    payment={p}
+                    scheduleLabel={c.schedule.find((s) => s.id === p.scheduleItemId)?.label}
+                    editable={editable}
+                    onDelete={() => setPending({ kind: "deletePayment", id: p.id })}
+                  />
                 ))}
                 {c.payments.length === 0 && (
                   <li className="rounded-xl bg-soft p-4 text-center text-sm text-muted">

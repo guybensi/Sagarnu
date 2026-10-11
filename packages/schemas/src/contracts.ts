@@ -1,5 +1,6 @@
 import {
   CONTRACT_STATUSES,
+  PAYMENT_FILE_KINDS,
   PAYMENT_METHODS,
   PRICING_TYPES,
   RELATIVE_ANCHORS,
@@ -105,3 +106,21 @@ export const paymentSchema = z.object({
 export type PaymentInput = z.infer<typeof paymentSchema>;
 
 export const updatePaymentSchema = paymentSchema.partial();
+
+export const PAYMENT_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"] as const;
+/** Receipts are small; photos are resized in the browser before upload. */
+export const PAYMENT_FILE_MAX_BYTES = 5 * 1024 * 1024;
+export const PAYMENT_FILES_PER_PAYMENT = 6;
+
+export const paymentFileUploadSchema = z.object({
+  kind: z.enum(PAYMENT_FILE_KINDS),
+  name: z.string().trim().min(1).max(200),
+  /** `data:application/pdf;base64,...` or an image data URL. */
+  dataUrl: z
+    .string()
+    .max(Math.ceil((PAYMENT_FILE_MAX_BYTES * 4) / 3) + 64)
+    .regex(/^data:(application\/pdf|image\/(jpeg|png|webp));base64,[A-Za-z0-9+/=]+$/, {
+      message: "invalid_file",
+    }),
+});
+export type PaymentFileUploadInput = z.infer<typeof paymentFileUploadSchema>;

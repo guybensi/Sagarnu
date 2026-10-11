@@ -54,3 +54,7 @@ export function timeOfDayFor(time: string | null | undefined): TimeOfDay | null 
   const hour = Number(time.split(":")[0]);
   return Number.isFinite(hour) ? (hour < 17 ? "noon" : "evening") : null;
 }
+
+/** Files attached to a payment, matching its receiptUrl / confirmationUrl links. */
+export const PAYMENT_FILE_KINDS = ["receipt", "confirmation"] as const;
+export type PaymentFileKind = (typeof PAYMENT_FILE_KINDS)[number];
