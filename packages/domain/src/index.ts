@@ -7,3 +7,4 @@ export * from "./pricing";
 export * from "./countdown";
 export * from "./balances";
 export * from "./categories";
+export * from "./phone";

@@ -32,6 +32,8 @@ export const ERROR_CODES = [
   "couple_event_limit",
   "confirmation_required",
   "rate_limited",
+  "wrong_password",
+  "sole_owner",
   "internal",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];

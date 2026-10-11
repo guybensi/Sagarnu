@@ -27,7 +27,22 @@ export interface MeDto {
   image: string | null;
   userType: UserType;
   phoneE164: string | null;
+  /** ISO time of WhatsApp consent, null when not given. */
+  whatsappOptInAt: string | null;
   defaultEventId: string | null;
+  /** False for accounts that only sign in with Google. */
+  hasPassword: boolean;
+}
+
+/** A signed-in device. `lastActiveAt` is updated about once a day. */
+export interface SessionDto {
+  id: string;
+  createdAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  current: boolean;
 }
 
 export interface EventDto {

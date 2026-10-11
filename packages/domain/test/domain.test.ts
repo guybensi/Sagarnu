@@ -5,8 +5,10 @@ import {
   contractBalance,
   countdown,
   daysUntil,
+  formatPhone,
   isValidIsoDate,
   jerusalemInstant,
+  normalizePhone,
   perGuestTotal,
   resolveDueDate,
   resolveScheduleAmount,
@@ -190,5 +192,31 @@ describe("countdown", () => {
       isPast: false,
     });
     expect(countdown(new Date("2025-01-01T00:00:00Z"), now).isPast).toBe(true);
+  });
+});
+
+describe("phone", () => {
+  it("normalizes how people type Israeli numbers", () => {
+    expect(normalizePhone("050-123 4567")).toBe("+972501234567");
+    expect(normalizePhone("0501234567")).toBe("+972501234567");
+    expect(normalizePhone("972501234567")).toBe("+972501234567");
+    expect(normalizePhone("+972 (0)50 123 4567")).toBe("+972501234567");
+    expect(normalizePhone("00972501234567")).toBe("+972501234567");
+    expect(normalizePhone("03-1234567")).toBe("+97231234567");
+    expect(normalizePhone("+1 415 555 0100")).toBe("+14155550100");
+  });
+
+  it("rejects what is not a phone number", () => {
+    expect(normalizePhone("")).toBeNull();
+    expect(normalizePhone("abc")).toBeNull();
+    expect(normalizePhone("050-123")).toBeNull();
+    expect(normalizePhone("1234567")).toBeNull();
+    expect(normalizePhone("+97201234567")).toBeNull();
+  });
+
+  it("formats Israeli numbers for display", () => {
+    expect(formatPhone("+972501234567")).toBe("050-123-4567");
+    expect(formatPhone("+97231234567")).toBe("03-123-4567");
+    expect(formatPhone("+14155550100")).toBe("+14155550100");
   });
 });

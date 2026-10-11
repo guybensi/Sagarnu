@@ -38,9 +38,8 @@ export const event = pgTable("event", {
   questionnaireCompletedAt: timestamp({ withTimezone: true }),
   /** Set when a dashboard photo exists; also busts the browser cache when it changes. */
   coverPhotoUpdatedAt: timestamp({ withTimezone: true }),
-  createdBy: uuid()
-    .notNull()
-    .references(() => user.id),
+  /** Null once the creator deleted their account; the event stays with its other members. */
+  createdBy: uuid().references(() => user.id, { onDelete: "set null" }),
   deletedAt: deletedAt(),
   ...timestamps,
 });

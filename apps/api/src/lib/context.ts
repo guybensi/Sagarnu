@@ -29,6 +29,8 @@ declare module "fastify" {
   }
   interface FastifyRequest {
     user: SessionUser | null;
+    /** The current session row (for "this device" in the sessions list). */
+    sessionId: string | null;
   }
 }
 
@@ -36,6 +38,7 @@ export async function requireUser(req: FastifyRequest): Promise<void> {
   const session = await req.server.ctx.auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
   if (!session) throw new AppError("unauthorized");
   req.user = session.user as SessionUser;
+  req.sessionId = session.session.id;
 }
 
 /** For handlers behind `requireUser`. */

@@ -27,6 +27,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
   const auth = createAuth(env, db, email);
   app.decorate("ctx", { env, db, auth });
   app.decorateRequest("user", null);
+  app.decorateRequest("sessionId", null);
   registerErrorHandler(app);
 
   await app.register(helmet, { contentSecurityPolicy: false });

@@ -14,6 +14,8 @@ const STATUS: Record<ErrorCode, number> = {
   couple_event_limit: 409,
   confirmation_required: 409,
   rate_limited: 429,
+  wrong_password: 403,
+  sole_owner: 409,
   internal: 500,
 };
 

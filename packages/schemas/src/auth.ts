@@ -52,5 +52,15 @@ export const updateMeSchema = z.object({
     .nullable()
     .optional(),
   defaultEventId: z.uuid().nullable().optional(),
+  /** Consent to WhatsApp reminders (phase 3). Needs a phone number. */
+  whatsappOptIn: z.boolean().optional(),
+  userType: z.enum(USER_TYPES).optional(),
 });
 export type UpdateMeInput = z.infer<typeof updateMeSchema>;
+
+/** Deleting the account: the password when there is one, and an explicit confirmation. */
+export const deleteAccountSchema = z.object({
+  password: z.string().max(128).optional(),
+  confirm: z.literal(true),
+});
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

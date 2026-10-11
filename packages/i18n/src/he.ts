@@ -73,6 +73,8 @@ export const he = {
     couple_event_limit: "לזוג יכול להיות אירוע אחד בבעלותו",
     confirmation_required: "הפעולה דורשת אישור",
     rate_limited: "יותר מדי ניסיונות. נסו שוב בעוד דקה",
+    wrong_password: "הסיסמה לא נכונה",
+    sole_owner: "יש אירועים משותפים שאת/ה הבעלים היחידים שלהם",
     internal: "משהו השתבש. נסו שוב",
     network: "אין חיבור לשרת",
   },
