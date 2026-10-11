@@ -41,10 +41,20 @@ body {
 }
 
 /* Numbers (amounts, dates) read left-to-right inside RTL text. */
-.num {
-  direction: ltr;
-  unicode-bidi: isolate;
-  font-variant-numeric: tabular-nums;
+@layer components {
+  .num {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-variant-numeric: tabular-nums;
+    /* On a block (table cell, <dd>, <p>) direction:ltr would also flip the alignment to the left.
+       Keep it on the right like the surrounding Hebrew. (text-align: match-parent would be the
+       elegant fix, but Chromium resolves it against the element's own LTR direction.) */
+    text-align: right;
+  }
+  /* …and centered where the container centers (summary tiles). */
+  .text-center .num {
+    text-align: center;
+  }
 }
 
 /* Thin, always-visible horizontal scrollbar for tab rows (ScrollRow). */
