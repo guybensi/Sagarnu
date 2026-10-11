@@ -10,6 +10,7 @@ import {
   ChevronDown,
   FileText,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Plus,
   Users,
@@ -61,6 +62,12 @@ function EventSwitcher({ eventId }: { eventId: string }) {
           {canCreate && (
             <>
               <DropdownMenu.Separator className="my-1 h-px bg-line" />
+              <DropdownMenu.Item asChild className={menuItem}>
+                <Link href="/events">
+                  <LayoutGrid className="size-4" />
+                  כל האירועים שלי
+                </Link>
+              </DropdownMenu.Item>
               <DropdownMenu.Item asChild className={cn(menuItem, "text-brand-600")}>
                 <Link href="/onboarding">
                   <Plus className="size-4" />
@@ -75,7 +82,7 @@ function EventSwitcher({ eventId }: { eventId: string }) {
   );
 }
 
-function UserMenu() {
+export function UserMenu() {
   const me = useMe();
   const router = useRouter();
   const qc = useQueryClient();

@@ -1,14 +1,19 @@
-import type { ContractStatus } from "@sagarnu/domain";
+import type { ContractStatus, Role } from "@sagarnu/domain";
 import type {
+  AcceptInvitationResultDto,
   CategoryDto,
   ContractDetailDto,
   ContractDto,
   CreateContractInput,
   CreateEventInput,
+  CreateInvitationInput,
+  CreateInvitationResultDto,
   CustomCategoryInput,
   DashboardDto,
   EventDto,
   ExpensesDto,
+  InvitationDto,
+  InvitationInfoDto,
   MeDto,
   MemberDto,
   PaymentFileDto,
@@ -41,6 +46,27 @@ export const endpoints = {
       api<EventDto>(`${ev(eventId)}/cover`, { method: "PUT", body: { dataUrl } }),
     removeCover: (eventId: string) => api<EventDto>(`${ev(eventId)}/cover`, { method: "DELETE" }),
     members: (eventId: string) => api<MemberDto[]>(`${ev(eventId)}/members`),
+  },
+  members: {
+    updateRole: (eventId: string, userId: string, role: Role) =>
+      api<{ userId: string; role: Role }>(`${ev(eventId)}/members/${userId}`, {
+        method: "PATCH",
+        body: { role },
+      }),
+    remove: (eventId: string, userId: string) =>
+      api<void>(`${ev(eventId)}/members/${userId}`, { method: "DELETE" }),
+  },
+  invitations: {
+    list: (eventId: string) => api<InvitationDto[]>(`${ev(eventId)}/invitations`),
+    create: (eventId: string, body: CreateInvitationInput) =>
+      api<CreateInvitationResultDto>(`${ev(eventId)}/invitations`, { method: "POST", body }),
+    revoke: (eventId: string, invitationId: string) =>
+      api<void>(`${ev(eventId)}/invitations/${invitationId}`, { method: "DELETE" }),
+    info: (token: string) => api<InvitationInfoDto>(`/v1/invitations/${encodeURIComponent(token)}`),
+    accept: (token: string) =>
+      api<AcceptInvitationResultDto>(`/v1/invitations/${encodeURIComponent(token)}/accept`, {
+        method: "POST",
+      }),
   },
   categories: {
     list: (eventId: string) => api<CategoryDto[]>(`${ev(eventId)}/categories`),

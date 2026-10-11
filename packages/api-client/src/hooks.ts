@@ -12,6 +12,7 @@ export const keys = {
   contract: (eventId: string, contractId: string) => ["event", eventId, "contract", contractId] as const,
   expenses: (eventId: string) => ["event", eventId, "expenses"] as const,
   members: (eventId: string) => ["event", eventId, "members"] as const,
+  invitations: (eventId: string) => ["event", eventId, "invitations"] as const,
 };
 
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: endpoints.me.get });
@@ -41,6 +42,13 @@ export const useExpenses = (eventId: string) =>
 
 export const useMembers = (eventId: string) =>
   useQuery({ queryKey: keys.members(eventId), queryFn: () => endpoints.events.members(eventId) });
+
+export const useInvitations = (eventId: string, enabled = true) =>
+  useQuery({
+    queryKey: keys.invitations(eventId),
+    queryFn: () => endpoints.invitations.list(eventId),
+    enabled,
+  });
 
 /** A mutation that refreshes everything about the event when it succeeds. */
 export function useEventMutation<TVars, TResult>(eventId: string, fn: (vars: TVars) => Promise<TResult>) {

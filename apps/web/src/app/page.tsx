@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Spinner } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 
-/** Entry point: no session → login; no event → questionnaire; otherwise the last event. */
+/** Entry point: no session → login; planners → their events; no event → questionnaire; else the last event. */
 export default function Home() {
   const router = useRouter();
   const session = authClient.useSession();
@@ -18,6 +18,7 @@ export default function Home() {
     if (session.isPending) return;
     if (!signedIn) return router.replace("/login");
     if (!events.data || !me.data) return;
+    if (me.data.userType === "planner") return router.replace("/events");
     if (events.data.length === 0) return router.replace("/onboarding");
     const target = events.data.find((e) => e.id === me.data.defaultEventId) ?? events.data[0]!;
     router.replace(`/e/${target.id}`);

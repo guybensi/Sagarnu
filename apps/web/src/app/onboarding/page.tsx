@@ -104,7 +104,11 @@ export default function OnboardingPage() {
       const event = await endpoints.events.create(payload.data);
       await qc.invalidateQueries({ queryKey: keys.events });
       await qc.invalidateQueries({ queryKey: keys.me });
-      router.replace(`/e/${event.id}`);
+      // A planner's next step is sharing the event with the couple.
+      if (session.data?.user.userType === "planner") {
+        toast.success("האירוע נוצר. עכשיו מזמינים את בני הזוג");
+        router.replace(`/e/${event.id}/members?invite=1`);
+      } else router.replace(`/e/${event.id}`);
     } catch (e) {
       toastError(e);
       setSaving(false);

@@ -3,17 +3,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInInput } from "@sagarnu/schemas";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { authErrorMessage, GoogleButton, isWrongCredentials, type AuthError } from "@/components/auth/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
+import { safeNext, withNext } from "@/lib/next-path";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const next = safeNext(useSearchParams().get("next"));
   const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
@@ -24,7 +26,7 @@ export default function LoginPage() {
     setError(null);
     const { error } = await authClient.signIn.email(values);
     if (error) return setError(error);
-    router.replace("/");
+    router.replace(next ?? "/");
   });
 
   const email = form.watch("email");
@@ -65,7 +67,7 @@ export default function LoginPage() {
             <p className="mt-1 text-ink">
               עוד לא נרשמת?{" "}
               <Link
-                href={`/signup?email=${encodeURIComponent(email)}`}
+                href={`/signup?email=${encodeURIComponent(email)}${next ? `&next=${encodeURIComponent(next)}` : ""}`}
                 className="font-medium text-brand-600 underline"
               >
                 יצירת חשבון
@@ -90,10 +92,18 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-muted">
         אין לך חשבון?{" "}
-        <Link href="/signup" className="font-medium text-brand-600 hover:underline">
+        <Link href={withNext("/signup", next)} className="font-medium text-brand-600 hover:underline">
           הרשמה
         </Link>
       </p>
     </form>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

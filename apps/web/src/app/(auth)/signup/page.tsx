@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
+import { safeNext, withNext } from "@/lib/next-path";
 import { cn } from "@/lib/cn";
 
 const TYPES = [
@@ -28,6 +29,7 @@ const TYPES = [
 function SignUpForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const next = safeNext(params.get("next"));
   const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
@@ -40,11 +42,11 @@ function SignUpForm() {
     setError(null);
     const { data, error } = await authClient.signUp.email({
       ...values,
-      callbackURL: `${window.location.origin}/`,
+      callbackURL: `${window.location.origin}${next ?? "/"}`,
     });
     if (error) return setError(error);
     // With email verification on, sign-up does not create a session yet.
-    if (data && "token" in data && data.token) router.replace("/");
+    if (data && "token" in data && data.token) router.replace(next ?? "/");
     else router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
   });
 
@@ -124,7 +126,7 @@ function SignUpForm() {
 
       <p className="text-center text-sm text-muted">
         כבר יש לך חשבון?{" "}
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+        <Link href={withNext("/login", next)} className="font-medium text-brand-600 hover:underline">
           התחברות
         </Link>
       </p>
