@@ -4,6 +4,7 @@ import { endpoints } from "./endpoints";
 /** Every query of an event lives under `["event", eventId]`, so one invalidation refreshes the whole screen. */
 export const keys = {
   me: ["me"] as const,
+  sessions: ["me", "sessions"] as const,
   events: ["events"] as const,
   event: (eventId: string) => ["event", eventId] as const,
   dashboard: (eventId: string) => ["event", eventId, "dashboard"] as const,
@@ -16,6 +17,7 @@ export const keys = {
 };
 
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: endpoints.me.get });
+export const useSessions = () => useQuery({ queryKey: keys.sessions, queryFn: endpoints.me.sessions });
 export const useEvents = () => useQuery({ queryKey: keys.events, queryFn: endpoints.events.list });
 
 export const useEvent = (eventId: string) =>

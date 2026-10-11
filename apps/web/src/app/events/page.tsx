@@ -6,13 +6,9 @@ import { formatDate, formatNumber, he } from "@sagarnu/i18n";
 import type { EventDto } from "@sagarnu/schemas";
 import { CalendarHeart, MapPin, Plus, Users } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Logo } from "@/components/brand";
-import { UserMenu } from "@/components/shell/app-shell";
+import { PlainShell } from "@/components/shell/plain-shell";
 import { Button } from "@/components/ui/button";
 import { Badge, Card, EmptyState, Spinner } from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 
 /** Upcoming first (soonest on top), then events without a date, then past ones. */
@@ -89,68 +85,51 @@ function EventCard({ event, today }: { event: EventDto; today: string }) {
 
 /** "האירועים שלי": a planner's home, listing every event they manage or were invited to. */
 export default function EventsPage() {
-  const router = useRouter();
-  const session = authClient.useSession();
   const me = useMe();
   const events = useEvents();
   const today = todayIso();
 
-  useEffect(() => {
-    if (!session.isPending && !session.data) router.replace("/login?next=/events");
-  }, [session.isPending, session.data, router]);
-
   const canCreate = me.data?.userType === "planner" || (events.data?.length ?? 0) === 0;
 
   return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-line bg-canvas/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
-          <Link href="/events">
-            <Logo />
-          </Link>
-          <div className="flex-1" />
-          <UserMenu />
+    <PlainShell next="/events">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">האירועים שלי</h1>
+          <p className="text-sm text-muted">כל האירועים שאת/ה מנהל/ת או שהוזמנת אליהם</p>
         </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">האירועים שלי</h1>
-            <p className="text-sm text-muted">כל האירועים שאת/ה מנהל/ת או שהוזמנת אליהם</p>
-          </div>
-          {canCreate && (
+        {canCreate && (
+          <Link href="/onboarding">
+            <Button>
+              <Plus className="size-4" />
+              אירוע חדש
+            </Button>
+          </Link>
+        )}
+      </div>
+      {events.isPending ? (
+        <Spinner />
+      ) : !events.data || events.data.length === 0 ? (
+        <EmptyState
+          icon={<CalendarHeart className="size-6" />}
+          title="עוד אין אירועים"
+          description="יוצרים אירוע, ממלאים את הפרטים ומזמינים את בני הזוג"
+          action={
             <Link href="/onboarding">
               <Button>
                 <Plus className="size-4" />
                 אירוע חדש
               </Button>
             </Link>
-          )}
+          }
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sortEvents(events.data, today).map((e) => (
+            <EventCard key={e.id} event={e} today={today} />
+          ))}
         </div>
-        {events.isPending || session.isPending ? (
-          <Spinner />
-        ) : !events.data || events.data.length === 0 ? (
-          <EmptyState
-            icon={<CalendarHeart className="size-6" />}
-            title="עוד אין אירועים"
-            description="יוצרים אירוע, ממלאים את הפרטים ומזמינים את בני הזוג"
-            action={
-              <Link href="/onboarding">
-                <Button>
-                  <Plus className="size-4" />
-                  אירוע חדש
-                </Button>
-              </Link>
-            }
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sortEvents(events.data, today).map((e) => (
-              <EventCard key={e.id} event={e} today={today} />
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+      )}
+    </PlainShell>
   );
 }

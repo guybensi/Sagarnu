@@ -9,6 +9,7 @@ import type {
   CreateInvitationInput,
   CreateInvitationResultDto,
   CustomCategoryInput,
+  DeleteAccountInput,
   DashboardDto,
   EventDto,
   ExpensesDto,
@@ -21,6 +22,7 @@ import type {
   PaymentInput,
   PaymentResultDto,
   ScheduleItemInput,
+  SessionDto,
   UpdateContractInput,
   UpdateEventInput,
   UpdateMeInput,
@@ -33,6 +35,12 @@ export const endpoints = {
   me: {
     get: () => api<MeDto>("/v1/me"),
     update: (body: UpdateMeInput) => api<MeDto>("/v1/me", { method: "PATCH", body }),
+    /** Same-origin download link (the browser sends the session cookie). */
+    exportUrl: "/v1/me/export",
+    remove: (body: DeleteAccountInput) => api<void>("/v1/me", { method: "DELETE", body }),
+    sessions: () => api<SessionDto[]>("/v1/me/sessions"),
+    revokeSession: (sessionId: string) => api<void>(`/v1/me/sessions/${sessionId}`, { method: "DELETE" }),
+    revokeOtherSessions: () => api<{ removed: number }>("/v1/me/sessions", { method: "DELETE" }),
   },
   events: {
     list: () => api<EventDto[]>("/v1/events"),

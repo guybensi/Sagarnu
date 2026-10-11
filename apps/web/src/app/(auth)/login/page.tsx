@@ -15,7 +15,9 @@ import { safeNext, withNext } from "@/lib/next-path";
 
 function LoginForm() {
   const router = useRouter();
-  const next = safeNext(useSearchParams().get("next"));
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
+  const deleted = params.get("deleted") === "1";
   const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
@@ -37,6 +39,11 @@ function LoginForm() {
         <h1 className="text-2xl font-bold">התחברות</h1>
         <p className="mt-1 text-sm text-muted">טוב לראות אותך שוב</p>
       </div>
+      {deleted && (
+        <p role="status" className="rounded-xl bg-success-soft p-3 text-sm text-success">
+          החשבון נמחק, וכל המידע שהיה רק שלך נמחק איתו.
+        </p>
+      )}
 
       <GoogleButton />
 

@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   LogOut,
   Plus,
+  Settings,
   Users,
   Wallet,
 } from "lucide-react";
@@ -108,6 +109,10 @@ export function UserMenu() {
             <p className="num text-xs text-muted">{me.data?.email}</p>
           </div>
           <DropdownMenu.Separator className="my-1 h-px bg-line" />
+          <DropdownMenu.Item className={menuItem} onSelect={() => router.push("/settings")}>
+            <Settings className="size-4" />
+            הגדרות החשבון
+          </DropdownMenu.Item>
           <DropdownMenu.Item
             className={menuItem}
             onSelect={async () => {

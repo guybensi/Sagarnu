@@ -17,6 +17,7 @@ const AUTH_ERRORS: Record<string, string> = {
   PASSWORD_TOO_SHORT: "הסיסמה לא עומדת בדרישות",
   INVALID_EMAIL: "כתובת האימייל לא תקינה",
   INVALID_TOKEN: "הקישור לא תקין או שפג תוקפו",
+  INVALID_PASSWORD: "הסיסמה הנוכחית לא נכונה",
   INVALID_ORIGIN: "שגיאת הגדרה בשרת: כתובת האתר (WEB_ORIGIN) לא תואמת",
   TOO_MANY_REQUESTS: "יותר מדי ניסיונות. נסו שוב בעוד דקה",
   SERVER_DOWN: "השרת לא זמין כרגע. נסו שוב בעוד רגע",
