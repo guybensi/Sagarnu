@@ -34,7 +34,7 @@
 [ ] Resend: מפתח API + אימות דומיין. בלי זה מיילים של אימות ואיפוס סיסמה
     לא נשלחים (הם מודפסים ללוג של Railway).
 
-[ ] משתמשי בדיקה בפרודקשן – למחוק (Railway → Postgres → Data → user):
+[X] משתמשי בדיקה בפרודקשן – למחוק (Railway → Postgres → Data → user):
     smoke-test-1791628611271@example.com
     smoke-test-1791704310803@example.com (עם אירוע "בדיקת דיפלוי")
 
