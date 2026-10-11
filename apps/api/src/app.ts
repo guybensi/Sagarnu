@@ -30,7 +30,8 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
   await app.register(cors, { origin: [env.WEB_ORIGIN], credentials: true });
   await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
 
-  // `commit` shows which version is live (Railway sets RAILWAY_GIT_COMMIT_SHA on every deploy).
+  // `commit` shows which version is live (Railway sets RAILWAY_GIT_COMMIT_SHA on every deploy;
+  // null when running locally).
   const commit = process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? null;
   app.get("/v1/health", async () => ({ ok: true, commit }));
 

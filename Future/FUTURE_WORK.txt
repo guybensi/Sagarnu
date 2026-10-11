@@ -26,11 +26,10 @@
     בדיקה מהירה בכל רגע: https://sagarnu-production.up.railway.app/v1/health
     מחזיר את ה-commit שרץ עכשיו.
 
-[ ] דיפלוי אוטומטי ב-Railway לא עובד: commits חדשים מ-GitHub לא נפרסים
-    (כנראה מסומנים Skipped). לבדוק: Deployments → "Hide Skipped" כדי להציג
-    אותם ולראות את הסיבה, וב-Settings את Source, Branch ו-Railway Config File
-    (/apps/api/railway.json). עד שזה מתוקן: Ctrl+K → Deploy Latest Commit
-    אחרי כל שינוי בשרת.
+[x] דיפלוי אוטומטי ב-Railway: היה כבוי ("Auto deploy is disabled" על הענף main).
+    הופעל ב-11/10/2026 (Settings → Branch connected to production).
+    שימו לב: Railway פורס רק כששינוי נוגע ב-apps/api, ב-packages או ב-pnpm-lock.yaml
+    (watchPatterns ב-apps/api/railway.json). שינוי בתיעוד בלבד לא יפרוס, וזה תקין.
 
 [ ] Resend: מפתח API + אימות דומיין. בלי זה מיילים של אימות ואיפוס סיסמה
     לא נשלחים (הם מודפסים ללוג של Railway).
