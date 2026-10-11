@@ -6,6 +6,18 @@ Sagarnu – Wedding budget manager for couples and planners: AI-powered vendor c
 
 **Setup & deployment (Hebrew, step by step): [SETUP.txt](SETUP.txt)** · Plan: [docs/PLAN.txt](docs/PLAN.txt)
 
+## Features (implemented)
+
+- **Auth:** sign-up as couple or planner, login with "remember me" (off = 24-hour non-renewing session), forgot/reset password, password policy. Login and password reset are limited to 5 attempts a minute per IP and per email (429 + `Retry-After`).
+- **Onboarding questionnaire** and **dashboard**: countdown, cover photo, next payment, overdue items, budget bar, missing categories.
+- **Contracts:** open locked, "עריכה" unlocks and saves everything at once; payment schedules by fixed date or "X days before/after the event / after signing", with the resolved date shown live under each row.
+- **Payments:** mark installments paid, attach receipt / transfer-confirmation files (PDF/images ≤5MB).
+- **Expenses** table and budget status.
+- **Planner mode & sharing:** planners manage many events (`/events`); invite the couple by email or one-time link (7 days, WhatsApp share), roles owner/editor/viewer, member management.
+- **Account settings** (`/settings`): profile, account type, phone + WhatsApp consent, password change, signed-in devices (sign out one/all others), JSON data export and account deletion (privacy law, amendment 13).
+
+Roadmap and open items: [Future/FUTURE_WORK.txt](Future/FUTURE_WORK.txt) · Session handoff: [Documentation/SESSION_HANDOFF.md](Documentation/SESSION_HANDOFF.md)
+
 ## Deployment
 
 | Service | Where                                                             | Notes                                                                                 |
@@ -36,6 +48,8 @@ No Docker or Postgres install needed locally — the API uses embedded PGlite (`
 | `packages/i18n`          | Hebrew labels and ₪ / date formatters                                        |
 | `packages/db`            | Drizzle schema, SQL migrations, seed (server-only)                           |
 | `packages/notifications` | Email provider (Resend / console) and templates (server-only)                |
+| `datasets`               | Contract-extraction ground-truth dataset + validator (not deployed)          |
+| `Future`                 | Roadmap (`FUTURE_WORK.txt`) and planned AI extraction JSON Schema            |
 
 ## Commands
 
@@ -43,5 +57,6 @@ No Docker or Postgres install needed locally — the API uses embedded PGlite (`
 pnpm test        # all unit + API integration tests (PGlite, no services needed)
 pnpm typecheck
 pnpm lint
+pnpm check       # format:check + lint + typecheck + test — same as CI; run before every commit
 pnpm --filter @sagarnu/db db:generate --name <change>   # after editing the Drizzle schema
 ```
