@@ -28,6 +28,26 @@ export function verifyEmailMessage(to: string, name: string, url: string): Email
   };
 }
 
+export function invitationMessage(
+  to: string,
+  inviterName: string,
+  eventName: string,
+  roleLabel: string,
+  url: string,
+): EmailMessage {
+  return {
+    to,
+    subject: `${inviterName} מזמין/ה אותך ל"${eventName}" – סגרנו`,
+    html: layout(
+      "הוזמנת לנהל איתנו את האירוע",
+      `${escape(inviterName)} הזמין/ה אותך להצטרף ל<b>${escape(eventName)}</b> בסגרנו (הרשאה: ${escape(roleLabel)}).<br>` +
+        "שם רואים את החוזים, התשלומים והתקציב במקום אחד. הקישור בתוקף 7 ימים.",
+      { label: "הצטרפות לאירוע", url },
+    ),
+    text: `${inviterName} הזמין/ה אותך להצטרף ל"${eventName}" בסגרנו (${roleLabel}). להצטרפות (בתוקף 7 ימים): ${url}`,
+  };
+}
+
 export function resetPasswordMessage(to: string, name: string, url: string): EmailMessage {
   return {
     to,

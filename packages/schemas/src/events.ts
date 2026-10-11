@@ -1,4 +1,4 @@
-import { CEREMONY_TYPES, EVENT_STYLES, KASHRUT_LEVELS, TIMES_OF_DAY } from "@sagarnu/domain";
+import { CEREMONY_TYPES, EVENT_STYLES, KASHRUT_LEVELS, ROLES, TIMES_OF_DAY } from "@sagarnu/domain";
 import { z } from "zod";
 import { agorot, isoDate, longText, nullable, shortText, timeOfDay } from "./common";
 
@@ -54,3 +54,14 @@ export const coverPhotoSchema = z.object({
     .max(Math.ceil((COVER_PHOTO_MAX_BYTES * 4) / 3) + 64)
     .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/, { message: "invalid_image" }),
 });
+
+/** Owners invite partners, parents or the couple. Ownership is granted later by changing a role. */
+export const INVITE_ROLES = ["editor", "viewer"] as const;
+
+export const createInvitationSchema = z.object({
+  email: z.email().max(254),
+  role: z.enum(INVITE_ROLES).default("editor"),
+});
+export type CreateInvitationInput = z.input<typeof createInvitationSchema>;
+
+export const updateMemberSchema = z.object({ role: z.enum(ROLES) });

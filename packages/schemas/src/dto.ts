@@ -185,6 +185,36 @@ export interface MemberDto {
   joinedAt: string;
 }
 
+export interface InvitationDto {
+  id: string;
+  email: string;
+  role: Role;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CreateInvitationResultDto {
+  invitation: InvitationDto;
+  /** Shown once: only a hash of the token is stored. */
+  inviteUrl: string;
+  /** False when the email could not be delivered (e.g. no verified sending domain yet). */
+  emailSent: boolean;
+}
+
+/** Public preview of an invitation link (no login needed). */
+export interface InvitationInfoDto {
+  status: "valid" | "expired" | "accepted" | "revoked";
+  eventName: string;
+  eventDate: IsoDate | null;
+  inviterName: string;
+  role: Role;
+}
+
+export interface AcceptInvitationResultDto {
+  eventId: string;
+  role: Role;
+}
+
 /** Returned after a payment is saved so the client can show the "next payment" prompt. */
 export interface PaymentResultDto {
   payment: PaymentDto;

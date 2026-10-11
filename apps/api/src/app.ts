@@ -11,6 +11,7 @@ import { registerErrorHandler } from "./lib/errors";
 import { contractRoutes } from "./routes/contracts";
 import { coverRoutes } from "./routes/cover";
 import { eventRoutes } from "./routes/events";
+import { invitationRoutes, publicInvitationRoutes } from "./routes/invitations";
 import { meRoutes } from "./routes/me";
 import { paymentFileRoutes } from "./routes/payment-files";
 
@@ -62,6 +63,9 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     },
   });
 
+  // Invitation preview works before login (the invitee may not have an account yet).
+  await app.register(publicInvitationRoutes);
+
   await app.register(async (protectedApp) => {
     protectedApp.addHook("preHandler", requireUser);
     await protectedApp.register(meRoutes);
@@ -69,6 +73,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     await protectedApp.register(contractRoutes);
     await protectedApp.register(coverRoutes);
     await protectedApp.register(paymentFileRoutes);
+    await protectedApp.register(invitationRoutes(email));
   });
 
   return app;
