@@ -1,5 +1,5 @@
 import type { IsoDate } from "./dates";
-import type { ContractStatus, ScheduleStatus } from "./enums";
+import type { ContractStatus, Payer, ScheduleStatus } from "./enums";
 import { sumAgorot, type Agorot } from "./money";
 
 export interface ContractLike {
@@ -130,4 +130,39 @@ export function summarizeExpenses(
     budgetLeftAgorot: budgetLeft,
     isOverBudget: budgetLeft != null && budgetLeft < 0,
   };
+}
+
+export interface PayerTotal {
+  payer: Payer | null;
+  /** Set for `other` only. */
+  payerName: string | null;
+  amountAgorot: Agorot;
+}
+
+/** Same payer: same kind, and for `other` the same name (ignoring case and spaces around it). */
+export function payerKey(payer: Payer | null, payerName: string | null): string {
+  if (payer === "other") return `other:${(payerName ?? "").trim().toLowerCase()}`;
+  return payer ?? "unknown";
+}
+
+/** Who paid how much, largest first. */
+export function totalsByPayer(
+  payments: readonly (Pick<PaymentLike, "amountAgorot"> & {
+    payer: Payer | null;
+    payerName: string | null;
+  })[],
+): PayerTotal[] {
+  const totals = new Map<string, PayerTotal>();
+  for (const p of payments) {
+    const key = payerKey(p.payer, p.payerName);
+    const total = totals.get(key);
+    if (total) total.amountAgorot += p.amountAgorot;
+    else
+      totals.set(key, {
+        payer: p.payer,
+        payerName: p.payer === "other" ? (p.payerName?.trim() ?? null) : null,
+        amountAgorot: p.amountAgorot,
+      });
+  }
+  return [...totals.values()].sort((a, b) => b.amountAgorot - a.amountAgorot);
 }

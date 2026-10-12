@@ -5,6 +5,9 @@ import type {
   ExpenseSummary,
   IsoDate,
   Kashrut,
+  PartnerRole,
+  Payer,
+  PayerTotal,
   PaymentFileKind,
   PaymentMethod,
   PricingType,
@@ -57,6 +60,10 @@ export interface EventDto {
   venueAddress: string | null;
   partner1Name: string | null;
   partner2Name: string | null;
+  partner1Role: PartnerRole | null;
+  partner2Role: PartnerRole | null;
+  defaultPayer: Payer | null;
+  defaultPayerName: string | null;
   eventStyle: EventStyle | null;
   ceremonyType: CeremonyType | null;
   kashrut: Kashrut | null;
@@ -102,6 +109,8 @@ export interface PaymentDto {
   amountAgorot: number;
   method: PaymentMethod;
   paidOn: IsoDate;
+  payer: Payer | null;
+  payerName: string | null;
   receiptUrl: string | null;
   confirmationUrl: string | null;
   notes: string | null;
@@ -185,11 +194,15 @@ export interface ExpenseRowDto {
   categoryName: string;
   nextDue: DueItemDto | null;
   isOverdue: boolean;
+  /** What each payer paid towards this contract. */
+  paidBy: PayerTotal[];
 }
 
 export interface ExpensesDto {
   summary: ExpenseSummary;
   rows: ExpenseRowDto[];
+  /** Everything paid in the event, per payer (including vendors no longer active). */
+  paidBy: PayerTotal[];
 }
 
 export interface MemberDto {

@@ -15,7 +15,7 @@ import { assertUuid, eventAccess } from "../lib/access";
 import { audit, diffOf } from "../lib/audit";
 import { currentUser } from "../lib/context";
 import { AppError, notFound } from "../lib/errors";
-import { toCategoryDto, toEventDto } from "../lib/mappers";
+import { normalizePayer, toCategoryDto, toEventDto } from "../lib/mappers";
 import { loadLedger } from "../services/ledger";
 
 const { category, contract, event, eventCategorySetting, eventMember, user } = schema;
@@ -62,7 +62,7 @@ export async function eventRoutes(app: FastifyInstance): Promise<void> {
     if (env.requireEmailVerification && !me.emailVerified) throw new AppError("email_not_verified");
     const { relevantCategoryKeys, customCategories, completeQuestionnaire, ...input } =
       createEventSchema.parse(req.body);
-    const fields = withDerivedTimeOfDay(input);
+    const fields = withDerivedTimeOfDay(normalizePayer(input, "defaultPayer", "defaultPayerName"));
 
     const created = await db.transaction(async (tx) => {
       if (me.userType === "couple") {
@@ -134,7 +134,7 @@ export async function eventRoutes(app: FastifyInstance): Promise<void> {
     const me = currentUser(req);
     const { event: ev, role } = await eventAccess(req, req.params.eventId, "event.edit");
     const { completeQuestionnaire, ...input } = updateEventSchema.parse(req.body);
-    const patch = withDerivedTimeOfDay(input);
+    const patch = withDerivedTimeOfDay(normalizePayer(input, "defaultPayer", "defaultPayerName"));
 
     const updated = await db.transaction(async (tx) => {
       const [row] = await tx

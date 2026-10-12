@@ -4,6 +4,8 @@ import {
   CONTRACT_STATUSES,
   EVENT_STYLES,
   KASHRUT_LEVELS,
+  PARTNER_ROLES,
+  PAYERS,
   PAYMENT_FILE_KINDS,
   PAYMENT_METHODS,
   PRICING_TYPES,
@@ -32,3 +34,5 @@ export const scheduleSource = pgEnum("schedule_source", SCHEDULE_SOURCES);
 export const relativeAnchor = pgEnum("relative_anchor", RELATIVE_ANCHORS);
 export const paymentMethod = pgEnum("payment_method", PAYMENT_METHODS);
 export const paymentFileKind = pgEnum("payment_file_kind", PAYMENT_FILE_KINDS);
+export const partnerRole = pgEnum("partner_role", PARTNER_ROLES);
+export const payer = pgEnum("payer", PAYERS);

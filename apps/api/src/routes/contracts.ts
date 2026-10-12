@@ -1,4 +1,5 @@
 import { schema, type Tx } from "@sagarnu/db";
+import { totalsByPayer } from "@sagarnu/domain";
 import {
   changeContractStatusSchema,
   createContractSchema,
@@ -17,6 +18,7 @@ import { assertUuid, eventAccess, type EventRow } from "../lib/access";
 import { audit, diffOf } from "../lib/audit";
 import { currentUser } from "../lib/context";
 import { AppError, notFound } from "../lib/errors";
+import { normalizePayer } from "../lib/mappers";
 import { loadLedger, refreshScheduleStatuses, type ContractRow } from "../services/ledger";
 
 const { category, contract, payment, paymentScheduleItem } = schema;
@@ -387,7 +389,8 @@ export async function contractRoutes(app: FastifyInstance): Promise<void> {
     async (req, reply) => {
       const me = currentUser(req);
       const { event: ev } = await access(req, "payment.write");
-      const { confirmOverpay, ...input } = paymentSchema.parse(req.body);
+      const { confirmOverpay, ...parsed } = paymentSchema.parse(req.body);
+      const input = normalizePayer(parsed, "payer", "payerName");
 
       const { c, id } = await db.transaction(async (tx) => {
         const c = await findContract(tx, ev, req.params.contractId);
@@ -440,7 +443,8 @@ export async function contractRoutes(app: FastifyInstance): Promise<void> {
     async (req) => {
       const me = currentUser(req);
       const { event: ev } = await access(req, "payment.write");
-      const { confirmOverpay: _confirm, ...patch } = updatePaymentSchema.parse(req.body);
+      const { confirmOverpay: _confirm, ...parsed } = updatePaymentSchema.parse(req.body);
+      const patch = normalizePayer(parsed, "payer", "payerName");
       const c = await db.transaction(async (tx) => {
         const before = await findPayment(tx, ev, req.params.paymentId);
         await assertItemOnContract(tx, before.contractId, patch.scheduleItemId);
@@ -506,7 +510,9 @@ export async function contractRoutes(app: FastifyInstance): Promise<void> {
           categoryName: byId.get(c.categoryId)?.nameHe ?? "",
           nextDue: ledger.nextDue(c),
           isOverdue: ledger.balance(c).overdue.length > 0,
+          paidBy: totalsByPayer(ledger.payments.filter((p) => p.contractId === c.id)),
         })),
+      paidBy: totalsByPayer(ledger.payments),
     };
   });
 }

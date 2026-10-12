@@ -15,7 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { agorot, bytea, createdAt, deletedAt, id, timestamps } from "./columns";
-import { ceremonyType, eventStyle, kashrut, role, timeOfDay } from "./enums";
+import { ceremonyType, eventStyle, kashrut, partnerRole, payer, role, timeOfDay } from "./enums";
 
 /** Questionnaire fields are nullable: null means "not known yet". */
 export const event = pgTable("event", {
@@ -30,6 +30,11 @@ export const event = pgTable("event", {
   venueAddress: text(),
   partner1Name: text(),
   partner2Name: text(),
+  partner1Role: partnerRole(),
+  partner2Role: partnerRole(),
+  /** Where most payments come from; the default for new payments. */
+  defaultPayer: payer(),
+  defaultPayerName: text(),
   eventStyle: eventStyle(),
   ceremonyType: ceremonyType(),
   kashrut: kashrut(),

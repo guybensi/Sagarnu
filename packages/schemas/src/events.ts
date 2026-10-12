@@ -1,4 +1,12 @@
-import { CEREMONY_TYPES, EVENT_STYLES, KASHRUT_LEVELS, ROLES, TIMES_OF_DAY } from "@sagarnu/domain";
+import {
+  CEREMONY_TYPES,
+  EVENT_STYLES,
+  KASHRUT_LEVELS,
+  PARTNER_ROLES,
+  PAYERS,
+  ROLES,
+  TIMES_OF_DAY,
+} from "@sagarnu/domain";
 import { z } from "zod";
 import { agorot, isoDate, longText, nullable, shortText, timeOfDay } from "./common";
 
@@ -13,6 +21,11 @@ const eventFields = {
   venueAddress: nullable(z.string().trim().max(200)),
   partner1Name: nullable(shortText),
   partner2Name: nullable(shortText),
+  partner1Role: nullable(z.enum(PARTNER_ROLES)),
+  partner2Role: nullable(z.enum(PARTNER_ROLES)),
+  defaultPayer: nullable(z.enum(PAYERS)),
+  /** Only kept when `defaultPayer` is `other`. */
+  defaultPayerName: nullable(shortText),
   eventStyle: nullable(z.enum(EVENT_STYLES)),
   ceremonyType: nullable(z.enum(CEREMONY_TYPES)),
   kashrut: nullable(z.enum(KASHRUT_LEVELS)),

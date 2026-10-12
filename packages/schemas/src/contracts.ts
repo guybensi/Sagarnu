@@ -1,5 +1,6 @@
 import {
   CONTRACT_STATUSES,
+  PAYERS,
   PAYMENT_FILE_KINDS,
   PAYMENT_METHODS,
   PRICING_TYPES,
@@ -96,6 +97,9 @@ export const paymentSchema = z.object({
   amountAgorot: positiveAgorot,
   method: z.enum(PAYMENT_METHODS),
   paidOn: isoDate,
+  /** Null: not recorded. `payerName` is only kept for `other`. */
+  payer: nullable(z.enum(PAYERS)),
+  payerName: nullable(shortText),
   scheduleItemId: nullable(id),
   receiptUrl: nullable(httpUrl),
   confirmationUrl: nullable(httpUrl),

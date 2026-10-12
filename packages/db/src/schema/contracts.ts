@@ -16,6 +16,7 @@ import { agorot, bytea, createdAt, deletedAt, id, timestamps } from "./columns";
 import {
   contractSource,
   contractStatus,
+  payer,
   paymentFileKind,
   paymentMethod,
   pricingType,
@@ -114,6 +115,10 @@ export const payment = pgTable(
     amountAgorot: agorot().notNull(),
     method: paymentMethod().notNull(),
     paidOn: date({ mode: "string" }).notNull(),
+    /** Null: not recorded (payments made before the payer existed). */
+    payer: payer(),
+    /** Only for `other`. */
+    payerName: text(),
     receiptUrl: text(),
     confirmationUrl: text(),
     notes: text(),

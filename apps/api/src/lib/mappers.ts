@@ -20,6 +20,10 @@ export function toEventDto(row: EventRow, role: Role): EventDto {
     venueAddress: row.venueAddress,
     partner1Name: row.partner1Name,
     partner2Name: row.partner2Name,
+    partner1Role: row.partner1Role,
+    partner2Role: row.partner2Role,
+    defaultPayer: row.defaultPayer,
+    defaultPayerName: row.defaultPayerName,
     eventStyle: row.eventStyle,
     ceremonyType: row.ceremonyType,
     kashrut: row.kashrut,
@@ -68,10 +72,25 @@ export function toPaymentDto(row: PaymentRow, files: PaymentFileMeta[] = []): Pa
     amountAgorot: row.amountAgorot,
     method: row.method,
     paidOn: row.paidOn,
+    payer: row.payer,
+    payerName: row.payerName,
     receiptUrl: row.receiptUrl,
     confirmationUrl: row.confirmationUrl,
     notes: row.notes,
     createdAt: row.createdAt.toISOString(),
     files: files.map(toPaymentFileDto),
   };
+}
+
+/**
+ * A payer name only means something next to `other`. Applies to payments (`payer`/`payerName`)
+ * and to the event default (`defaultPayer`/`defaultPayerName`); untouched keys stay untouched.
+ */
+export function normalizePayer<T extends Record<string, unknown>>(
+  input: T,
+  kindKey: keyof T,
+  nameKey: keyof T,
+): T {
+  if (!(kindKey in input)) return input;
+  return { ...input, [nameKey]: input[kindKey] === "other" ? (input[nameKey] ?? null) : null };
 }

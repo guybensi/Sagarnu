@@ -55,6 +55,21 @@ export function timeOfDayFor(time: string | null | undefined): TimeOfDay | null 
   return Number.isFinite(hour) ? (hour < 17 ? "noon" : "evening") : null;
 }
 
+/** How each partner is referred to in the app (any combination: groom+bride, two grooms, two brides). */
+export const PARTNER_ROLES = ["groom", "bride"] as const;
+export type PartnerRole = (typeof PARTNER_ROLES)[number];
+
+/** Whose money paid. `other` comes with a free-text name. */
+export const PAYERS = [
+  "partner1",
+  "partner2",
+  "joint",
+  "partner1_parents",
+  "partner2_parents",
+  "other",
+] as const;
+export type Payer = (typeof PAYERS)[number];
+
 /** Files attached to a payment, matching its receiptUrl / confirmationUrl links. */
 export const PAYMENT_FILE_KINDS = ["receipt", "confirmation"] as const;
 export type PaymentFileKind = (typeof PAYMENT_FILE_KINDS)[number];

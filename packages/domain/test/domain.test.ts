@@ -16,6 +16,7 @@ import {
   summarizeExpenses,
   timeOfDayFor,
   todayIso,
+  totalsByPayer,
   type ScheduleItemLike,
 } from "../src";
 
@@ -218,5 +219,24 @@ describe("phone", () => {
     expect(formatPhone("+972501234567")).toBe("050-123-4567");
     expect(formatPhone("+97231234567")).toBe("03-123-4567");
     expect(formatPhone("+14155550100")).toBe("+14155550100");
+  });
+});
+
+describe("payers", () => {
+  it("adds up payments per payer, keeping named others apart", () => {
+    const totals = totalsByPayer([
+      { amountAgorot: 100, payer: "joint", payerName: null },
+      { amountAgorot: 50, payer: "other", payerName: "סבתא רחל" },
+      { amountAgorot: 300, payer: "joint", payerName: null },
+      { amountAgorot: 70, payer: "other", payerName: " סבתא רחל " },
+      { amountAgorot: 20, payer: "other", payerName: "דוד משה" },
+      { amountAgorot: 10, payer: null, payerName: null },
+    ]);
+    expect(totals).toEqual([
+      { payer: "joint", payerName: null, amountAgorot: 400 },
+      { payer: "other", payerName: "סבתא רחל", amountAgorot: 120 },
+      { payer: "other", payerName: "דוד משה", amountAgorot: 20 },
+      { payer: null, payerName: null, amountAgorot: 10 },
+    ]);
   });
 });
