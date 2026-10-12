@@ -48,6 +48,7 @@ No Docker or Postgres install needed locally — the API uses embedded PGlite (`
 | `packages/i18n`          | Hebrew labels and ₪ / date formatters                                        |
 | `packages/db`            | Drizzle schema, SQL migrations, seed (server-only)                           |
 | `packages/notifications` | Email provider (Resend / console) and templates (server-only)                |
+| `e2e`                    | Playwright end-to-end tests (run in CI; locally on the installed Edge)       |
 | `datasets`               | Contract-extraction ground-truth dataset + validator (not deployed)          |
 | `Future`                 | Roadmap (`FUTURE_WORK.txt`) and planned AI extraction JSON Schema            |
 
@@ -58,5 +59,6 @@ pnpm test        # all unit + API integration tests (PGlite, no services needed)
 pnpm typecheck
 pnpm lint
 pnpm check       # format:check + lint + typecheck + test — same as CI; run before every commit
+pnpm e2e         # Playwright end-to-end tests (starts API + web on :8180/:3100 with an in-memory DB)
 pnpm --filter @sagarnu/db db:generate --name <change>   # after editing the Drizzle schema
 ```

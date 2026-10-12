@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
   - "datasets"
+  - "e2e"
 
 onlyBuiltDependencies:
   - esbuild

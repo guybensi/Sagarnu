@@ -38,4 +38,11 @@ describe("env", () => {
       /WEB_ORIGIN/,
     );
   });
+
+  it("allows turning rate limits off only outside production", () => {
+    const prod = { BETTER_AUTH_SECRET: secret, DATABASE_URL: "postgresql://x", WEB_ORIGIN: "https://a.b" };
+    expect(() => loadEnv({ ...prod, RATE_LIMITS: "false" })).toThrow(/RATE_LIMITS/);
+    expect(loadEnv({ ...prod, NODE_ENV: "test", RATE_LIMITS: "false" }).RATE_LIMITS).toBe(false);
+    expect(loadEnv(prod).RATE_LIMITS).toBe(true);
+  });
 });

@@ -18,6 +18,8 @@ const schema = z.object({
   /** Defaults to on when email sending is configured. */
   REQUIRE_EMAIL_VERIFICATION: bool.optional(),
   MIGRATE_ON_START: bool.default(true),
+  /** Request rate limits. Only end-to-end test runs turn them off; production refuses to. */
+  RATE_LIMITS: bool.default(true),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
 });
 
@@ -41,6 +43,7 @@ export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
       problems.push("DATABASE_URL: missing — on Railway set it to ${{Postgres.DATABASE_URL}}");
     }
     if (!source.WEB_ORIGIN) problems.push("WEB_ORIGIN: missing — the public URL of the web app (Vercel)");
+    if (source.RATE_LIMITS === "false") problems.push("RATE_LIMITS: must not be false in production");
   }
 
   if (!parsed.success || problems.length > 0) {

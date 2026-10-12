@@ -1,0 +1,17 @@
+{
+  "name": "@sagarnu/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end tests: real browser against the web app and API on an in-memory database.",
+  "scripts": {
+    "e2e": "playwright test",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@sagarnu/config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "~6.0.3"
+  }
+}

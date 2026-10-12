@@ -32,7 +32,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
 
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: [env.WEB_ORIGIN], credentials: true });
-  await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
+  if (env.RATE_LIMITS) await app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
 
   // `commit` shows which version is live (Railway sets RAILWAY_GIT_COMMIT_SHA on every deploy;
   // null when running locally).
@@ -45,7 +45,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     url: "/v1/auth/*",
     config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
     // Login and password reset: 5 a minute per IP and per email.
-    preHandler: createAuthAttemptLimiter(),
+    preHandler: env.RATE_LIMITS ? createAuthAttemptLimiter() : [],
     async handler(req, reply) {
       const headers = new Headers();
       for (const [key, value] of Object.entries(req.headers)) {

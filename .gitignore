@@ -13,6 +13,8 @@ Thumbs.db
 .claude/settings*.json
 .data/
 next-env.d.ts
+e2e/test-results/
+e2e/playwright-report/
 
 # Ground-truth datasets: real contracts are private. Only the template, docs and tooling are tracked.
 datasets/contracts/examples/*
