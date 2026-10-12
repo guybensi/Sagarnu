@@ -43,7 +43,7 @@ export default defineConfig({
     },
     {
       // A production build: no dev compile delays, and it is what users get.
-      command: `pnpm --filter @sagarnu/web build && pnpm --filter @sagarnu/web start --port ${WEB_PORT}`,
+      command: `node clean-next.mjs && pnpm --filter @sagarnu/web build && pnpm --filter @sagarnu/web start --port ${WEB_PORT}`,
       url: `${WEB}/login`,
       env: { API_URL: `http://localhost:${API_PORT}` },
       timeout: 300_000,
