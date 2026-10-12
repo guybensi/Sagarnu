@@ -193,6 +193,14 @@ export const he = {
     forgotPassword: "שכחתי סיסמה",
     backToLogin: "חזרה להתחברות",
     continueWithGoogle: "המשך עם Google",
+    /** Better Auth OAuth error codes, shown on the login page after a failed Google sign-in. */
+    googleErrors: {
+      // An unverified password account already uses this email; linking it silently would be unsafe.
+      account_not_linked:
+        "כבר יש חשבון עם האימייל הזה. התחברו עם הסיסמה, ואז אפשר לחבר את Google במסך ההגדרות.",
+      access_denied: "ההתחברות עם Google בוטלה",
+    } as Record<string, string>,
+    googleFailed: "ההתחברות עם Google לא הצליחה. נסו שוב",
     or: "או",
     login: {
       title: "התחברות",
@@ -382,6 +390,15 @@ export const he = {
       submit: "עדכון סיסמה",
       updated: "הסיסמה עודכנה",
       updatedSignedOut: "הסיסמה עודכנה, ושאר המכשירים נותקו",
+    },
+    google: {
+      title: "התחברות עם Google",
+      connected: 'החשבון מחובר ל-Google. אפשר להתחבר גם בלחיצה על "המשך עם Google".',
+      notConnected: "חברו את חשבון ה-Google שלכם כדי להתחבר בלחיצה אחת, בלי סיסמה.",
+      connect: "חיבור חשבון Google",
+      linked: "חשבון Google חובר",
+      emailMismatch: "צריך לבחור ב-Google את החשבון עם אותה כתובת אימייל כמו כאן",
+      failed: "החיבור ל-Google לא הצליח. נסו שוב",
     },
     sessions: {
       title: "מכשירים מחוברים",

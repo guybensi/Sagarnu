@@ -35,6 +35,8 @@ export interface MeDto {
   defaultEventId: string | null;
   /** False for accounts that only sign in with Google. */
   hasPassword: boolean;
+  /** A Google account is connected, so "continue with Google" signs in here. */
+  hasGoogle: boolean;
 }
 
 /** A signed-in device. `lastActiveAt` is updated about once a day. */

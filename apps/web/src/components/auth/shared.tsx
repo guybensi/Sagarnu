@@ -69,7 +69,12 @@ export function GoogleButton() {
         size="lg"
         className="w-full"
         onClick={() =>
-          authClient.signIn.social({ provider: "google", callbackURL: `${window.location.origin}/` })
+          authClient.signIn.social({
+            provider: "google",
+            callbackURL: `${window.location.origin}/`,
+            // Failures come back as /login?error=<code> instead of Better Auth's bare error page.
+            errorCallbackURL: `${window.location.origin}/login`,
+          })
         }
       >
         <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
@@ -96,4 +101,10 @@ export function GoogleButton() {
       </div>
     </>
   );
+}
+
+/** Message for `?error=` after a failed Google sign-in. */
+export function googleErrorMessage(code: string | null): string | null {
+  if (!code) return null;
+  return he.auth.googleErrors[code] ?? he.auth.googleFailed;
 }

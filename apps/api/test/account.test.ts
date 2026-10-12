@@ -45,7 +45,12 @@ describe("account settings, export and deletion", () => {
 
   it("profile: name, account type, phone and WhatsApp consent", async () => {
     const before = await me(roni);
-    expect(before).toMatchObject({ hasPassword: true, phoneE164: null, whatsappOptInAt: null });
+    expect(before).toMatchObject({
+      hasPassword: true,
+      hasGoogle: false,
+      phoneE164: null,
+      whatsappOptInAt: null,
+    });
 
     expect((await patchMe(roni, { whatsappOptIn: true })).statusCode).toBe(422);
     expect((await patchMe(roni, { phoneE164: "050-1234567" })).statusCode).toBe(422);

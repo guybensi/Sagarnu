@@ -33,6 +33,17 @@ export async function meRoutes(app: FastifyInstance): Promise<void> {
     return row?.password ?? null;
   };
 
+  const signInMethods = async (userId: string) => {
+    const rows = await db
+      .select({ providerId: account.providerId, password: account.password })
+      .from(account)
+      .where(eq(account.userId, userId));
+    return {
+      hasPassword: rows.some((r) => r.providerId === "credential" && r.password != null),
+      hasGoogle: rows.some((r) => r.providerId === "google"),
+    };
+  };
+
   const load = async (id: string): Promise<MeDto> => {
     const [row] = await db.select().from(user).where(eq(user.id, id));
     if (!row) throw notFound();
@@ -46,7 +57,7 @@ export async function meRoutes(app: FastifyInstance): Promise<void> {
       phoneE164: row.phoneE164,
       whatsappOptInAt: row.whatsappOptInAt?.toISOString() ?? null,
       defaultEventId: row.defaultEventId,
-      hasPassword: (await passwordHash(id)) != null,
+      ...(await signInMethods(id)),
     };
   };
 

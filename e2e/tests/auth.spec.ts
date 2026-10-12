@@ -55,6 +55,13 @@ test("a couple signs up, fills the questionnaire and reaches the dashboard", asy
   expect(errors).toEqual([]);
 });
 
+test("a failed Google sign-in explains what to do", async ({ page }) => {
+  await page.goto("/login?error=account_not_linked");
+  await expect(page.getByText("התחברו עם הסיסמה, ואז אפשר לחבר את Google", { exact: false })).toBeVisible();
+  await page.goto("/login?error=something_else");
+  await expect(page.getByText("ההתחברות עם Google לא הצליחה. נסו שוב")).toBeVisible();
+});
+
 test("pages that need a session send guests to login", async ({ page }) => {
   await page.goto("/settings");
   await page.waitForURL(/\/login/);

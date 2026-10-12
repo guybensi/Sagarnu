@@ -7,7 +7,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { authErrorMessage, GoogleButton, isWrongCredentials, type AuthError } from "@/components/auth/shared";
+import {
+  authErrorMessage,
+  GoogleButton,
+  googleErrorMessage,
+  isWrongCredentials,
+  type AuthError,
+} from "@/components/auth/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -19,6 +25,7 @@ function LoginForm() {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const deleted = params.get("deleted") === "1";
+  const googleError = googleErrorMessage(params.get("error"));
   const session = authClient.useSession();
   const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignInInput>({
@@ -47,6 +54,12 @@ function LoginForm() {
       {deleted && (
         <p role="status" className="rounded-xl bg-success-soft p-3 text-sm text-success">
           {he.auth.login.accountDeleted}
+        </p>
+      )}
+
+      {googleError && (
+        <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          {googleError}
         </p>
       )}
 

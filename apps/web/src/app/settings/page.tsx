@@ -4,7 +4,9 @@ import { he } from "@sagarnu/i18n";
 import { useMe } from "@sagarnu/api-client";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { DataCard } from "@/components/settings/data-card";
+import { GoogleCard } from "@/components/settings/google-card";
 import { PasswordCard } from "@/components/settings/password-card";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { SessionsCard } from "@/components/settings/sessions-card";
@@ -30,6 +32,10 @@ export default function SettingsPage() {
           <>
             <ProfileCard />
             <PasswordCard />
+            {/* Reads ?google= / ?error= after returning from Google. */}
+            <Suspense>
+              <GoogleCard />
+            </Suspense>
             <SessionsCard />
             <DataCard />
           </>
