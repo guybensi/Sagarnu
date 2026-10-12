@@ -1,17 +1,85 @@
 "use client";
 
-import { endpoints } from "@sagarnu/api-client";
-import type { PaymentFileKind } from "@sagarnu/domain";
-import { formatDate, formatILS, he } from "@sagarnu/i18n";
+import { endpoints, useEvent } from "@sagarnu/api-client";
+import type { Payer, PaymentFileKind } from "@sagarnu/domain";
+import { formatDate, formatILS, he, payerLabel, type Couple } from "@sagarnu/i18n";
 import type { PaymentDto, PaymentFileDto } from "@sagarnu/schemas";
 import { ExternalLink, FileText, Image as ImageIcon, Paperclip, Receipt, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/dialog";
+import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { toastError } from "@/lib/errors";
 import { ACCEPT_RECEIPTS, fileErrorMessage, formatFileSize, prepareReceipt } from "@/lib/files";
 import { useRefreshEvent } from "@/lib/use-refresh";
+import { PayerPicker } from "./payer-picker";
+
+/** Changes who paid an existing payment (older payments start as "not recorded"). */
+function PayerDialog({
+  eventId,
+  payment,
+  couple,
+  open,
+  onOpenChange,
+}: {
+  eventId: string;
+  payment: PaymentDto;
+  couple: Couple;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const refresh = useRefreshEvent(eventId);
+  const [payer, setPayer] = useState<Payer | null>(payment.payer);
+  const [payerName, setPayerName] = useState<string | null>(payment.payerName);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await endpoints.payments.update(eventId, payment.id, {
+        payer,
+        payerName: payer === "other" ? payerName?.trim() || null : null,
+      });
+      await refresh();
+      toast.success(he.payments.payerSaved);
+      onOpenChange(false);
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={he.payments.payerTitle}
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            {he.common.cancel}
+          </Button>
+          <Button onClick={save} loading={saving}>
+            {he.common.save}
+          </Button>
+        </>
+      }
+    >
+      <PayerPicker
+        id={`payer-${payment.id}`}
+        label={he.payments.payer}
+        couple={couple}
+        payer={payer}
+        payerName={payerName}
+        onChange={(p, name) => {
+          setPayer(p);
+          setPayerName(name);
+        }}
+      />
+    </Dialog>
+  );
+}
 
 const KIND_LABEL: Record<PaymentFileKind, string> = he.paymentFileKind;
 
@@ -67,6 +135,8 @@ export function PaymentRow({
   onDelete: () => void;
 }) {
   const refresh = useRefreshEvent(eventId);
+  const event = useEvent(eventId);
+  const [editingPayer, setEditingPayer] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState<PaymentFileKind>("receipt");
   const [uploading, setUploading] = useState(false);
@@ -117,6 +187,23 @@ export function PaymentRow({
           <p className="text-xs text-muted">
             <span className="num">{formatDate(p.paidOn)}</span> · {he.paymentMethod[p.method]}
             {scheduleLabel && ` · ${scheduleLabel}`}
+            {event.data && (
+              <>
+                {" · "}
+                {editable ? (
+                  <button
+                    type="button"
+                    className="underline decoration-dotted underline-offset-2 hover:text-ink"
+                    title={he.payments.changePayer}
+                    onClick={() => setEditingPayer(true)}
+                  >
+                    {payerLabel(event.data, p.payer, p.payerName)}
+                  </button>
+                ) : (
+                  payerLabel(event.data, p.payer, p.payerName)
+                )}
+              </>
+            )}
           </p>
         </div>
         {links.map((l) => (
@@ -184,6 +271,15 @@ export function PaymentRow({
         confirmLabel={he.common.delete}
         onConfirm={removeFile}
       />
+      {event.data && editingPayer && (
+        <PayerDialog
+          eventId={eventId}
+          payment={p}
+          couple={event.data}
+          open={editingPayer}
+          onOpenChange={setEditingPayer}
+        />
+      )}
     </li>
   );
 }

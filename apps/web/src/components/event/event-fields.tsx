@@ -1,12 +1,20 @@
 "use client";
 
-import { CEREMONY_TYPES, EVENT_STYLES, KASHRUT_LEVELS, timeOfDayFor, TIMES_OF_DAY } from "@sagarnu/domain";
+import {
+  CEREMONY_TYPES,
+  EVENT_STYLES,
+  KASHRUT_LEVELS,
+  PARTNER_ROLES,
+  timeOfDayFor,
+  TIMES_OF_DAY,
+} from "@sagarnu/domain";
 import { Moon, Sun } from "lucide-react";
 import { he } from "@sagarnu/i18n";
 import type { CreateEventInput } from "@sagarnu/schemas";
 import type { ReactNode } from "react";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { MoneyInput } from "@/components/ui/money-input";
+import { PayerPicker } from "@/components/payments/payer-picker";
 import { cn } from "@/lib/cn";
 
 export type EventForm = Required<
@@ -24,6 +32,10 @@ export const emptyEventForm: EventForm = {
   venueAddress: null,
   partner1Name: null,
   partner2Name: null,
+  partner1Role: null,
+  partner2Role: null,
+  defaultPayer: null,
+  defaultPayerName: null,
   eventStyle: null,
   ceremonyType: null,
   kashrut: null,
@@ -224,23 +236,41 @@ export function PlaceFields({ form, set, unknown, toggleUnknown }: FieldProps) {
   );
 }
 
+function PartnerField({ form, set, which }: Pick<FieldProps, "form" | "set"> & { which: 1 | 2 }) {
+  const nameKey = which === 1 ? "partner1Name" : "partner2Name";
+  const roleKey = which === 1 ? "partner1Role" : "partner2Role";
+  const role = form[roleKey];
+  const label = role
+    ? he.eventFields.partnerNameLabel(role, which, form.partner1Role === form.partner2Role)
+    : which === 1
+      ? he.eventFields.partner1
+      : he.eventFields.partner2;
+  return (
+    <div className="grid gap-2">
+      <Field label={label} htmlFor={nameKey}>
+        <Input
+          id={nameKey}
+          value={form[nameKey] ?? ""}
+          onChange={(e) => set(nameKey, text(e.target.value))}
+        />
+      </Field>
+      <div role="group" aria-label={`${he.eventFields.roleQuestion} (${which})`}>
+        <Chips
+          options={PARTNER_ROLES}
+          labels={he.partnerRole}
+          value={role}
+          onChange={(v) => set(roleKey, v)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function PeopleFields({ form, set }: FieldProps) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <Field label={he.eventFields.partner1} htmlFor="partner1Name">
-        <Input
-          id="partner1Name"
-          value={form.partner1Name ?? ""}
-          onChange={(e) => set("partner1Name", text(e.target.value))}
-        />
-      </Field>
-      <Field label={he.eventFields.partner2} htmlFor="partner2Name">
-        <Input
-          id="partner2Name"
-          value={form.partner2Name ?? ""}
-          onChange={(e) => set("partner2Name", text(e.target.value))}
-        />
-      </Field>
+      <PartnerField form={form} set={set} which={1} />
+      <PartnerField form={form} set={set} which={2} />
       <Field
         label={he.eventFields.eventName}
         htmlFor="name"
@@ -254,6 +284,20 @@ export function PeopleFields({ form, set }: FieldProps) {
           onChange={(e) => set("name", e.target.value)}
         />
       </Field>
+      <div className="sm:col-span-2">
+        <PayerPicker
+          id="defaultPayer"
+          label={he.eventFields.defaultPayer}
+          hint={he.eventFields.defaultPayerHint}
+          couple={form}
+          payer={form.defaultPayer}
+          payerName={form.defaultPayerName}
+          onChange={(payer, name) => {
+            set("defaultPayer", payer);
+            set("defaultPayerName", name);
+          }}
+        />
+      </div>
     </div>
   );
 }

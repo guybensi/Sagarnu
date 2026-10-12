@@ -28,8 +28,9 @@ async function call<T>(page: Page, method: "GET" | "POST", path: string, data?: 
 }
 
 /** Event with guests and budget, one approved contract with two installments, the first one paid. */
-export async function seedEvent(page: Page) {
+export async function seedEvent(page: Page, eventFields: Record<string, unknown> = {}) {
   const event = await call<{ id: string }>(page, "POST", "/v1/events", {
+    ...eventFields,
     name: "החתונה של מיכל ואורי",
     eventDate: "2027-05-20",
     eventTime: "19:00",

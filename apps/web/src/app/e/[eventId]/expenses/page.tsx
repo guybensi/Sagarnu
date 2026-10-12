@@ -1,7 +1,8 @@
 "use client";
 
-import { useExpenses } from "@sagarnu/api-client";
-import { formatDate, formatILS, he } from "@sagarnu/i18n";
+import { useEvent, useExpenses } from "@sagarnu/api-client";
+import { payerKey, type PayerTotal } from "@sagarnu/domain";
+import { formatDate, formatILS, he, payerLabel } from "@sagarnu/i18n";
 import { AlertTriangle, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,11 +16,22 @@ import { useEventId } from "@/lib/use-event-id";
 export default function ExpensesPage() {
   const eventId = useEventId();
   const expenses = useExpenses(eventId);
+  const event = useEvent(eventId);
   const [openId, setOpenId] = useState<string | null>(null);
+  /** `payerKey` of the payer to show, or null for everyone. */
+  const [payerFilter, setPayerFilter] = useState<string | null>(null);
 
-  if (expenses.isPending) return <Spinner />;
+  if (expenses.isPending || event.isPending) return <Spinner />;
   if (expenses.error) return <p className="text-danger">{messageOf(expenses.error)}</p>;
-  const { summary, rows } = expenses.data;
+  if (event.error) return <p className="text-danger">{messageOf(event.error)}</p>;
+  const { summary, paidBy } = expenses.data;
+  const keyOf = (t: PayerTotal) => payerKey(t.payer, t.payerName);
+  const labelOf = (t: PayerTotal) => payerLabel(event.data, t.payer, t.payerName);
+  const selected = paidBy.find((t) => keyOf(t) === payerFilter) ?? null;
+  /** What the selected payer paid towards a contract; null when not filtering. */
+  const paidBySelected = (row: (typeof expenses.data.rows)[number]) =>
+    selected ? (row.paidBy.find((t) => keyOf(t) === keyOf(selected))?.amountAgorot ?? 0) : null;
+  const rows = selected ? expenses.data.rows.filter((r) => (paidBySelected(r) ?? 0) > 0) : expenses.data.rows;
 
   const tiles = [
     { label: he.expenses.committed, value: summary.committedAgorot },
@@ -60,7 +72,45 @@ export default function ExpensesPage() {
         </p>
       )}
 
-      {rows.length === 0 ? (
+      {paidBy.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs text-muted">{he.expenses.paidByFilter}</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label={he.expenses.paidByFilter}>
+            {[null, ...paidBy].map((t) => {
+              const key = t ? keyOf(t) : null;
+              const active = key === (selected ? keyOf(selected) : null);
+              return (
+                <button
+                  key={key ?? "all"}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setPayerFilter(key)}
+                  className={cn(
+                    "rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                    active
+                      ? "border-brand-500 bg-brand-50 font-medium text-brand-700"
+                      : "border-line hover:bg-soft",
+                  )}
+                >
+                  {t ? (
+                    <>
+                      {labelOf(t)} · <span className="num">{formatILS(t.amountAgorot)}</span>
+                    </>
+                  ) : (
+                    he.expenses.everyone
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {selected && rows.length === 0 ? (
+        <p className="rounded-xl bg-soft p-4 text-center text-sm text-muted">
+          {he.expenses.nothingPaidBy(labelOf(selected))}
+        </p>
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={<Wallet className="size-6" />}
           title={he.expenses.emptyTitle}
@@ -86,78 +136,97 @@ export default function ExpensesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {rows.map(({ contract: c, categoryName, nextDue, isOverdue }) => (
-                  <tr key={c.id} onClick={() => setOpenId(c.id)} className="cursor-pointer hover:bg-soft/60">
-                    <td className="px-4 py-3">
-                      <p className="font-medium">{c.vendorName}</p>
-                      <p className="text-xs text-muted">{categoryName}</p>
-                    </td>
-                    <td className="num px-4 py-3">{formatILS(c.totalAmountAgorot)}</td>
-                    <td className="num px-4 py-3 text-success">{formatILS(c.paidAgorot)}</td>
-                    <td className="num px-4 py-3">
-                      {c.overpaidAgorot > 0 ? (
-                        <span className="text-warning">
-                          {he.expenses.overpaid(formatILS(c.overpaidAgorot))}
-                        </span>
-                      ) : (
-                        formatILS(c.remainingAgorot)
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {isOverdue ? (
-                        <Badge tone="danger">
-                          <AlertTriangle className="size-3" />
-                          {he.expenses.late}
-                        </Badge>
-                      ) : nextDue ? (
-                        <span className="num">
-                          {formatDate(nextDue.dueDate)} · {formatILS(nextDue.remainingAgorot)}
-                        </span>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const { contract: c, categoryName, nextDue, isOverdue } = row;
+                  const paid = paidBySelected(row);
+                  return (
+                    <tr
+                      key={c.id}
+                      onClick={() => setOpenId(c.id)}
+                      className="cursor-pointer hover:bg-soft/60"
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{c.vendorName}</p>
+                        <p className="text-xs text-muted">{categoryName}</p>
+                      </td>
+                      <td className="num px-4 py-3">{formatILS(c.totalAmountAgorot)}</td>
+                      <td
+                        className="num px-4 py-3 text-success"
+                        title={selected ? he.expenses.paidByOnly(labelOf(selected)) : undefined}
+                      >
+                        {formatILS(paid ?? c.paidAgorot)}
+                      </td>
+                      <td className="num px-4 py-3">
+                        {c.overpaidAgorot > 0 ? (
+                          <span className="text-warning">
+                            {he.expenses.overpaid(formatILS(c.overpaidAgorot))}
+                          </span>
+                        ) : (
+                          formatILS(c.remainingAgorot)
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {isOverdue ? (
+                          <Badge tone="danger">
+                            <AlertTriangle className="size-3" />
+                            {he.expenses.late}
+                          </Badge>
+                        ) : nextDue ? (
+                          <span className="num">
+                            {formatDate(nextDue.dueDate)} · {formatILS(nextDue.remainingAgorot)}
+                          </span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </Card>
 
           {/* Mobile: cards */}
           <div className="grid gap-3 md:hidden">
-            {rows.map(({ contract: c, categoryName, nextDue, isOverdue }) => (
-              <button key={c.id} onClick={() => setOpenId(c.id)} className="text-start">
-                <Card className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold">{c.vendorName}</p>
-                      <p className="text-xs text-muted">{categoryName}</p>
+            {rows.map((row) => {
+              const { contract: c, categoryName, nextDue, isOverdue } = row;
+              const paid = paidBySelected(row);
+              return (
+                <button key={c.id} onClick={() => setOpenId(c.id)} className="text-start">
+                  <Card className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold">{c.vendorName}</p>
+                        <p className="text-xs text-muted">{categoryName}</p>
+                      </div>
+                      {isOverdue && <Badge tone="danger">{he.expenses.late}</Badge>}
                     </div>
-                    {isOverdue && <Badge tone="danger">{he.expenses.late}</Badge>}
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                    <div>
-                      <p className="text-muted">{he.expenses.total}</p>
-                      <p className="num font-semibold">{formatILS(c.totalAmountAgorot)}</p>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="text-muted">{he.expenses.total}</p>
+                        <p className="num font-semibold">{formatILS(c.totalAmountAgorot)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted">
+                          {selected ? he.expenses.paidByOnly(labelOf(selected)) : he.expenses.paid}
+                        </p>
+                        <p className="num font-semibold text-success">{formatILS(paid ?? c.paidAgorot)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted">{he.expenses.left}</p>
+                        <p className="num font-semibold">{formatILS(c.remainingAgorot)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-muted">{he.expenses.paid}</p>
-                      <p className="num font-semibold text-success">{formatILS(c.paidAgorot)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted">{he.expenses.left}</p>
-                      <p className="num font-semibold">{formatILS(c.remainingAgorot)}</p>
-                    </div>
-                  </div>
-                  {nextDue && !isOverdue && (
-                    <p className="num mt-3 text-xs text-muted">
-                      {he.expenses.nextShort}
-                      {formatDate(nextDue.dueDate)} · {formatILS(nextDue.remainingAgorot)}
-                    </p>
-                  )}
-                </Card>
-              </button>
-            ))}
+                    {nextDue && !isOverdue && (
+                      <p className="num mt-3 text-xs text-muted">
+                        {he.expenses.nextShort}
+                        {formatDate(nextDue.dueDate)} · {formatILS(nextDue.remainingAgorot)}
+                      </p>
+                    )}
+                  </Card>
+                </button>
+              );
+            })}
           </div>
         </>
       )}

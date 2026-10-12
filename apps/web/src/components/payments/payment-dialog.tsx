@@ -1,10 +1,11 @@
 "use client";
 
-import { endpoints, useContract } from "@sagarnu/api-client";
+import { endpoints, useContract, useEvent } from "@sagarnu/api-client";
 import {
   PAYMENT_FILE_KINDS,
   PAYMENT_METHODS,
   todayIso,
+  type Payer,
   type PaymentFileKind,
   type PaymentMethod,
 } from "@sagarnu/domain";
@@ -20,6 +21,7 @@ import { fieldErrors, isConfirmationRequired, toastError } from "@/lib/errors";
 import { useRefreshEvent } from "@/lib/use-refresh";
 import { FilePick, type PickedFile } from "./file-pick";
 import { NextPaymentPrompt } from "./next-payment-prompt";
+import { PayerPicker } from "./payer-picker";
 
 const NO_FILES: Record<PaymentFileKind, PickedFile | null> = { receipt: null, confirmation: null };
 
@@ -27,6 +29,8 @@ interface FormState {
   amountAgorot: number | null;
   method: PaymentMethod;
   paidOn: string;
+  payer: Payer | null;
+  payerName: string | null;
   scheduleItemId: string | null;
   receiptUrl: string;
   confirmationUrl: string;
@@ -47,6 +51,7 @@ export function PaymentDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const contract = useContract(eventId, open ? contractId : null);
+  const event = useEvent(eventId);
   const refresh = useRefreshEvent(eventId);
   const [form, setForm] = useState<FormState | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,18 +64,21 @@ export function PaymentDialog({
 
   // Default amount: the selected (or next open) schedule item, otherwise the contract remainder.
   useEffect(() => {
-    if (!open || !contract.data || form) return;
+    if (!open || !contract.data || !event.data || form) return;
     const item = openItems.find((s) => s.id === scheduleItemId) ?? openItems.find((s) => s.dueDate) ?? null;
     setForm({
       amountAgorot: item?.remainingAgorot ?? contract.data.remainingAgorot ?? null,
       method: "bank_transfer",
       paidOn: todayIso(),
+      // Where most payments come from, as answered in the questionnaire.
+      payer: event.data.defaultPayer,
+      payerName: event.data.defaultPayerName,
       scheduleItemId: item?.id ?? null,
       receiptUrl: "",
       confirmationUrl: "",
       notes: "",
     });
-  }, [open, contract.data, form, openItems, scheduleItemId]);
+  }, [open, contract.data, event.data, form, openItems, scheduleItemId]);
 
   useEffect(() => {
     if (!open) {
@@ -89,6 +97,8 @@ export function PaymentDialog({
       amountAgorot: form.amountAgorot ?? 0,
       method: form.method,
       paidOn: form.paidOn,
+      payer: form.payer,
+      payerName: form.payer === "other" ? form.payerName?.trim() || null : null,
       scheduleItemId: form.scheduleItemId,
       receiptUrl: form.receiptUrl.trim() || null,
       confirmationUrl: form.confirmationUrl.trim() || null,
@@ -174,6 +184,16 @@ export function PaymentDialog({
                 />
               </Field>
             </div>
+            {event.data && (
+              <PayerPicker
+                id="payer"
+                label={he.payments.payer}
+                couple={event.data}
+                payer={form.payer}
+                payerName={form.payerName}
+                onChange={(payer, name) => setForm((f) => (f ? { ...f, payer, payerName: name } : f))}
+              />
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={he.payments.method} htmlFor="method">
                 <Select

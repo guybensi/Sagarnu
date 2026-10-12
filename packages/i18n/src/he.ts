@@ -3,6 +3,7 @@ import type {
   ContractStatus,
   EventStyle,
   Kashrut,
+  PartnerRole,
   PaymentFileKind,
   PaymentMethod,
   PricingType,
@@ -63,6 +64,17 @@ export const he = {
     other: "אחר",
   } satisfies Record<PaymentMethod, string>,
   paymentFileKind: { receipt: "קבלה", confirmation: "אישור העברה" } satisfies Record<PaymentFileKind, string>,
+  partnerRole: { groom: "חתן", bride: "כלה" } satisfies Record<PartnerRole, string>,
+  /** "החתן", "הכלה": how the app refers to a partner whose name is not known yet. */
+  partnerRoleDefinite: { groom: "החתן", bride: "הכלה" } satisfies Record<PartnerRole, string>,
+  /** Payer labels without partner names; the named ones are built by `payerLabels()`. */
+  payer: {
+    joint: "חשבון משותף",
+    other: "אחר",
+    unknown: "לא צוין",
+    account: (who: string) => `החשבון של ${who}`,
+    parents: (who: string) => `ההורים של ${who}`,
+  },
   errors: {
     bad_request: "הבקשה לא תקינה",
     validation_failed: "יש שדות שצריך לתקן",
@@ -300,6 +312,19 @@ export const he = {
     venueAddress: "כתובת",
     partner1: "שם בן/בת הזוג הראשון/ה",
     partner2: "שם בן/בת הזוג השני/ה",
+    /** "שם החתן"; with two grooms or two brides also which one. */
+    partnerNameLabel: (role: PartnerRole, which: 1 | 2, sameRoles: boolean) =>
+      !sameRoles
+        ? `שם ${role === "groom" ? "החתן" : "הכלה"}`
+        : role === "groom"
+          ? `שם החתן ${which === 1 ? "הראשון" : "השני"}`
+          : `שם הכלה ${which === 1 ? "הראשונה" : "השנייה"}`,
+    roleQuestion: "חתן או כלה?",
+    neutralPartner: (which: 1 | 2) => `בן/בת זוג ${which}`,
+    defaultPayer: "מאיפה ייצאו רוב התשלומים?",
+    defaultPayerHint: "ייבחר אוטומטית בכל תשלום חדש, ואפשר לשנות בכל תשלום.",
+    otherPayerName: "מי?",
+    otherPayerPlaceholder: "למשל: סבתא רחל",
     eventName: "שם האירוע",
     eventNameHint: "כך האירוע יופיע באפליקציה ובתזכורות",
     style: "סגנון האירוע",
@@ -404,6 +429,10 @@ export const he = {
     receiptHint: "קישור (למשל לדרייב) או קובץ PDF / תמונה",
     invalidLink: "קישור לא תקין (https://…)",
     notes: "הערות",
+    payer: "מי שילם",
+    payerTitle: "מי שילם?",
+    payerSaved: "עודכן מי שילם",
+    changePayer: "שינוי מי שילם",
     saved: "התשלום נשמר",
     savedFileFailed: "התשלום נשמר, אבל קובץ לא הועלה. אפשר לצרף אותו מהיסטוריית התשלומים",
     overpayTitle: "התשלום עובר את סכום החוזה",
@@ -495,6 +524,10 @@ export const he = {
     total: "סה״כ",
     left: "נותר",
     overpaid: (amount: string) => `שולם ביתר ${amount}`,
+    paidByFilter: "מי שילם",
+    everyone: "כולם",
+    paidByOnly: (who: string) => `שולם על ידי ${who}`,
+    nothingPaidBy: (who: string) => `עוד לא נרשמו תשלומים של ${who}`,
     late: "באיחור",
     nextShort: "הבא: ",
   },

@@ -21,8 +21,13 @@ test("a couple signs up, fills the questionnaire and reaches the dashboard", asy
   await page.getByLabel("עיר / אזור").fill("ראשון לציון");
   await page.getByLabel("שם האולם / המקום").fill("גני הוורדים");
   await page.getByRole("button", { name: "הבא" }).click();
-  await page.getByLabel("שם בן/בת הזוג הראשון/ה").fill("מיכל");
-  await page.getByLabel("שם בן/בת הזוג השני/ה").fill("אורי");
+  // Choosing groom/bride renames the fields.
+  await page.getByRole("group", { name: "חתן או כלה? (1)" }).getByRole("button", { name: "כלה" }).click();
+  await page.getByRole("group", { name: "חתן או כלה? (2)" }).getByRole("button", { name: "חתן" }).click();
+  await page.getByLabel("שם הכלה").fill("מיכל");
+  await page.getByLabel("שם החתן").fill("אורי");
+  await expect(page.locator("#defaultPayer option", { hasText: "החשבון של מיכל" })).toHaveCount(1);
+  await page.locator("#defaultPayer").selectOption("joint");
   await page.getByRole("button", { name: "הבא" }).click();
   await page.getByRole("button", { name: "גן אירועים" }).click();
   await page.getByRole("button", { name: "הבא" }).click();
