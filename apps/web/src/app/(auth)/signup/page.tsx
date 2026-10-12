@@ -30,6 +30,7 @@ function SignUpForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
+  const session = authClient.useSession();
   const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
@@ -46,8 +47,11 @@ function SignUpForm() {
     });
     if (error) return setError(error);
     // With email verification on, sign-up does not create a session yet.
-    if (data && "token" in data && data.token) router.replace(next ?? "/");
-    else router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
+    if (data && "token" in data && data.token) {
+      // Refresh the cached session first (it may still say "signed out" after a logout in this tab).
+      await session.refetch();
+      router.replace(next ?? "/");
+    } else router.replace(`/verify-email?email=${encodeURIComponent(values.email)}`);
   });
 
   return (

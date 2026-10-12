@@ -18,6 +18,7 @@ function LoginForm() {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const deleted = params.get("deleted") === "1";
+  const session = authClient.useSession();
   const [error, setError] = useState<AuthError>(null);
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
@@ -28,6 +29,9 @@ function LoginForm() {
     setError(null);
     const { error } = await authClient.signIn.email(values);
     if (error) return setError(error);
+    // After a logout in this tab the cached session is still "signed out"; the next page would
+    // send us straight back here.
+    await session.refetch();
     router.replace(next ?? "/");
   });
 
