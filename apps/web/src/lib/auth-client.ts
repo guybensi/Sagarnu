@@ -15,3 +15,8 @@ export const authClient = createAuthClient({
 });
 
 export const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true";
+/**
+ * While the Google app is in "Testing" only listed test users can sign in with it, so everyone
+ * else sees the button as "coming soon". Set to true after publishing the app in Google Cloud.
+ */
+export const googlePublic = process.env.NEXT_PUBLIC_GOOGLE_PUBLIC === "true";

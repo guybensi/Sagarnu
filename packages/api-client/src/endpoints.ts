@@ -139,5 +139,8 @@ export const endpoints = {
   },
   expenses: {
     get: (eventId: string) => api<ExpensesDto>(`${ev(eventId)}/expenses`),
+    /** Excel download (an attachment, so the page stays). `payer` is a payerKey filter. */
+    exportUrl: (eventId: string, payer?: string | null) =>
+      `${ev(eventId)}/expenses/export${payer ? `?payer=${encodeURIComponent(payer)}` : ""}`,
   },
 };

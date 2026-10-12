@@ -4,7 +4,8 @@ import { failedPasswordRules, passwordRules, type PasswordRule } from "@sagarnu/
 import { he } from "@sagarnu/i18n";
 import { Check, Circle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { authClient, googleEnabled } from "@/lib/auth-client";
+import { Badge } from "@/components/ui/card";
+import { authClient, googleEnabled, googlePublic } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 
 const AUTH_ERRORS = he.auth.errors;
@@ -68,6 +69,7 @@ export function GoogleButton() {
         variant="secondary"
         size="lg"
         className="w-full"
+        disabled={!googlePublic}
         onClick={() =>
           authClient.signIn.social({
             provider: "google",
@@ -93,7 +95,9 @@ export function GoogleButton() {
           />
         </svg>
         {he.auth.continueWithGoogle}
+        {!googlePublic && <Badge tone="brand">{he.auth.googleSoon}</Badge>}
       </Button>
+      {!googlePublic && <p className="-mt-2 text-center text-xs text-muted">{he.auth.googleSoonNote}</p>}
       <div className="flex items-center gap-3 text-xs text-muted">
         <span className="h-px flex-1 bg-line" />
         {he.auth.or}

@@ -11,6 +11,7 @@ import { requireUser } from "./lib/context";
 import { registerErrorHandler } from "./lib/errors";
 import { contractFileRoutes } from "./routes/contract-files";
 import { contractRoutes } from "./routes/contracts";
+import { expensesExportRoutes } from "./routes/expenses-export";
 import { coverRoutes } from "./routes/cover";
 import { eventRoutes } from "./routes/events";
 import { invitationRoutes, publicInvitationRoutes } from "./routes/invitations";
@@ -79,6 +80,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     await protectedApp.register(coverRoutes);
     await protectedApp.register(paymentFileRoutes);
     await protectedApp.register(contractFileRoutes);
+    await protectedApp.register(expensesExportRoutes);
     await protectedApp.register(invitationRoutes(email));
   });
 

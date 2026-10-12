@@ -1,9 +1,9 @@
 "use client";
 
-import { useEvent, useExpenses } from "@sagarnu/api-client";
+import { endpoints, useEvent, useExpenses } from "@sagarnu/api-client";
 import { payerKey, type PayerTotal } from "@sagarnu/domain";
 import { formatDate, formatILS, he, payerLabel } from "@sagarnu/i18n";
-import { AlertTriangle, Wallet } from "lucide-react";
+import { AlertTriangle, Download, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { VendorDrawer } from "@/components/contracts/vendor-drawer";
@@ -48,9 +48,23 @@ export default function ExpensesPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold">{he.expenses.title}</h1>
-        <p className="text-sm text-muted">{he.expenses.subtitle}</p>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{he.expenses.title}</h1>
+          <p className="text-sm text-muted">{he.expenses.subtitle}</p>
+        </div>
+        {(expenses.data.rows.length > 0 || paidBy.length > 0) && (
+          // An attachment: the browser downloads it and stays on this page. Follows the payer filter.
+          <Button
+            variant="secondary"
+            onClick={() =>
+              window.location.assign(endpoints.expenses.exportUrl(eventId, selected ? keyOf(selected) : null))
+            }
+          >
+            <Download className="size-4" />
+            {he.expenses.exportExcel}
+          </Button>
+        )}
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">

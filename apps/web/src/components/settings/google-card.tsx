@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { authClient, googleEnabled } from "@/lib/auth-client";
+import { authClient, googleEnabled, googlePublic } from "@/lib/auth-client";
 
 /**
  * Connects Google to an existing account. Signing in with Google cannot do this on its own while
@@ -31,7 +31,9 @@ export function GoogleCard() {
     if (result || error) window.history.replaceState(null, "", "/settings");
   }, [result, error]);
 
-  if (!googleEnabled || !me.data) return null;
+  // Before the Google app is published, connecting only works for its test users: show the
+  // card only to accounts that are already connected.
+  if (!googleEnabled || !me.data || (!googlePublic && !me.data.hasGoogle)) return null;
 
   const connect = async () => {
     setBusy(true);

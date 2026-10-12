@@ -47,5 +47,14 @@ test("who paid: default from the event, other payers by name, filter in expenses
   // Only what grandma paid towards the venue.
   await expect(page.locator("table td.text-success")).toHaveText([/(^|[^\d,])5,000(?!\d)/]);
 
+  // Excel export follows the payer filter and leaves the page as is.
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "ייצוא לאקסל" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^sagarnu-expenses-\d{4}-\d{2}-\d{2}\.xlsx$/);
+  expect(download.url()).toContain("payer=other");
+  await expect(page).toHaveURL(new RegExp(`/e/${eventId}/expenses$`));
+
   expect(errors).toEqual([]);
 });

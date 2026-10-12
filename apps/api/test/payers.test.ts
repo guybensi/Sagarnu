@@ -1,4 +1,5 @@
 import type { CategoryDto, EventDto, ExpensesDto, PaymentResultDto } from "@sagarnu/schemas";
+import ExcelJS from "exceljs";
 import type { InjectOptions } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setup } from "./helpers";
@@ -103,5 +104,35 @@ describe("partners and payers", () => {
       amountAgorot: 1_000,
     });
     expect(expenses.paidBy.some((t) => t.payerName === "דוד משה")).toBe(false);
+  });
+
+  it("exports expenses and payments to Excel, optionally for one payer", async () => {
+    const res = await call({ method: "GET", url: `/v1/events/${eventId}/expenses/export` });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/spreadsheetml/);
+    expect(res.headers["content-disposition"]).toMatch(
+      /attachment; filename="sagarnu-expenses-\d{4}-\d{2}-\d{2}\.xlsx"/,
+    );
+
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(new Uint8Array(res.rawPayload).buffer);
+    const expenses = book.getWorksheet("הוצאות")!;
+    const payments = book.getWorksheet("תשלומים")!;
+    expect(expenses.views[0]?.rightToLeft).toBe(true);
+    expect(expenses.getRow(2).getCell(1).value).toBe("ספק");
+    expect(expenses.getRow(2).getCell(4).value).toBe(660); // 30,000 + 20,000 + 10,000 + 5,000 + 1,000 agorot = ₪660
+    // Header + 5 payments + total row.
+    expect(payments.rowCount).toBe(7);
+    expect(payments.getRow(2).getCell(6).value).toBeTruthy();
+
+    const grandma = await call({
+      method: "GET",
+      url: `/v1/events/${eventId}/expenses/export?payer=${encodeURIComponent("other:סבתא רחל")}`,
+    });
+    const filtered = new ExcelJS.Workbook();
+    await filtered.xlsx.load(new Uint8Array(grandma.rawPayload).buffer);
+    expect(filtered.getWorksheet("הוצאות")!.getRow(1).getCell(4).value).toBe("שולם על ידי סבתא רחל");
+    expect(filtered.getWorksheet("הוצאות")!.getRow(2).getCell(4).value).toBe(200);
+    expect(filtered.getWorksheet("תשלומים")!.rowCount).toBe(3);
   });
 });

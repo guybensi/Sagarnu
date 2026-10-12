@@ -145,6 +145,8 @@ Railway ו-Vercel מתחברים ישירות לשם, וכל push מעלה גר�
      http://localhost:3000/v1/auth/callback/google      (לפיתוח)
 4. ב-Railway: GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET
 5. ב-Vercel: NEXT_PUBLIC_GOOGLE_ENABLED = true ← ואז Redeploy (חובה, הערך נקבע בזמן build).
+6. אחרי Publish של האפליקציה ב-Google: ב-Vercel גם NEXT_PUBLIC_GOOGLE_PUBLIC = true ← Redeploy.
+   עד אז הכפתור מוצג "בקרוב" ולא לחיץ (במצב Testing רק משתמשי הבדיקה יכולים להתחבר).
 
 ג3. Groq – ניתוח חוזים ב-AI (שלב 2, אפשר לפתוח כבר עכשיו)
 ----------------------------------------------------------
@@ -186,5 +188,6 @@ Railway (שירות ה-API):
 Vercel (האתר):
   API_URL                     חובה   הכתובת של Railway
   NEXT_PUBLIC_GOOGLE_ENABLED  רשות   true אחרי הגדרת Google
+  NEXT_PUBLIC_GOOGLE_PUBLIC   רשות   true אחרי Publish של אפליקציית Google
 
 אסור לשים מפתחות בקוד או לעשות להם commit. קבצי .env כבר ב-.gitignore.
