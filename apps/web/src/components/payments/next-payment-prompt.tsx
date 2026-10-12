@@ -2,7 +2,7 @@
 
 import { endpoints } from "@sagarnu/api-client";
 import { addDaysIso, todayIso } from "@sagarnu/domain";
-import { formatDate, formatILS } from "@sagarnu/i18n";
+import { formatDate, formatILS, he } from "@sagarnu/i18n";
 import type { PaymentResultDto } from "@sagarnu/schemas";
 import { CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -44,7 +44,7 @@ export function NextPaymentPrompt({
   }, [result]);
 
   const save = async () => {
-    if (!date || !amount) return toast.error("צריך תאריך וסכום");
+    if (!date || !amount) return toast.error(he.payments.next.needDateAndAmount);
     setSaving(true);
     try {
       if (next) {
@@ -57,14 +57,14 @@ export function NextPaymentPrompt({
         });
       } else {
         await endpoints.schedule.add(eventId, contractId, {
-          label: "תשלום הבא",
+          label: he.payments.next.defaultLabel,
           dueDate: date,
           amountAgorot: amount,
           source: "next_payment_prompt",
         });
       }
       await refresh();
-      toast.success("המועד נשמר");
+      toast.success(he.payments.next.saved);
       onClose();
     } catch (e) {
       toastError(e);
@@ -77,23 +77,23 @@ export function NextPaymentPrompt({
     <Dialog
       open={result != null}
       onOpenChange={(o) => !o && onClose()}
-      title={next && !editing ? "התשלום הבא" : "מתי התשלום הבא?"}
-      description={`נותרו ${formatILS(result?.remainingAgorot)} לתשלום לספק הזה`}
+      title={next && !editing ? he.payments.next.title : he.payments.next.ask}
+      description={he.payments.next.remaining(formatILS(result?.remainingAgorot))}
       footer={
         next && !editing ? (
           <>
             <Button variant="secondary" onClick={() => setEditing(true)}>
-              שינוי
+              {he.payments.next.change}
             </Button>
-            <Button onClick={onClose}>אישור</Button>
+            <Button onClick={onClose}>{he.common.ok}</Button>
           </>
         ) : (
           <>
             <Button variant="secondary" onClick={onClose}>
-              {next ? "ביטול" : "אין עדיין"}
+              {next ? he.common.cancel : he.payments.next.notYet}
             </Button>
             <Button onClick={save} loading={saving}>
-              שמירה
+              {he.common.save}
             </Button>
           </>
         )
@@ -111,10 +111,10 @@ export function NextPaymentPrompt({
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="תאריך" htmlFor="nextDate">
+          <Field label={he.payments.date} htmlFor="nextDate">
             <Input id="nextDate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <Field label="סכום" htmlFor="nextAmount">
+          <Field label={he.payments.amount} htmlFor="nextAmount">
             <MoneyInput id="nextAmount" value={amount} onChange={setAmount} />
           </Field>
         </div>

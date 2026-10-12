@@ -21,14 +21,7 @@ import { contractTone, scheduleTone } from "./status";
 type Pending =
   { kind: "delete"; paymentCount?: number; paidAgorot?: number } | { kind: "deletePayment"; id: string };
 
-/** "7 ימים לפני האירוע", "ביום החתימה", "יום אחרי האירוע" … */
-export function relativeTiming(anchor: "event" | "signing", days: number): string {
-  const what = anchor === "event" ? "האירוע" : "החתימה";
-  if (days === 0) return `ביום ${what}`;
-  const n = Math.abs(days);
-  const count = n === 1 ? "יום" : `${n} ימים`;
-  return `${count} ${days < 0 ? "לפני" : "אחרי"} ${what}`;
-}
+export const relativeTiming = he.drawer.relativeTiming;
 
 function ScheduleItemRow({
   item,
@@ -46,12 +39,12 @@ function ScheduleItemRow({
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium">{item.label}</span>
           <Badge tone={overdue ? "danger" : scheduleTone[item.status]}>
-            {overdue ? "באיחור" : he.scheduleStatus[item.status]}
+            {overdue ? he.drawer.late : he.scheduleStatus[item.status]}
           </Badge>
         </div>
         {/* Only the date is LTR; the Hebrew around it must keep RTL order. */}
         <p className="mt-0.5 text-xs text-muted">
-          {item.dueDate ? <span className="num">{formatDate(item.dueDate)}</span> : "ללא תאריך"}
+          {item.dueDate ? <span className="num">{formatDate(item.dueDate)}</span> : he.drawer.noDate}
           {item.relativeAnchor && ` (${relativeTiming(item.relativeAnchor, item.relativeDays ?? 0)})`}
         </p>
       </div>
@@ -60,13 +53,13 @@ function ScheduleItemRow({
         {item.status === "pending" &&
           item.remainingAgorot != null &&
           item.remainingAgorot !== item.amountAgorot && (
-            <p className="num text-xs text-muted">נותר {formatILS(item.remainingAgorot)}</p>
+            <p className="num text-xs text-muted">{he.drawer.left(formatILS(item.remainingAgorot))}</p>
           )}
       </div>
       {canPay && item.status === "pending" && (
         <Button size="sm" variant="secondary" onClick={onPay}>
           <Check className="size-3.5 text-success" />
-          סמן כשולם
+          {he.drawer.markPaid}
         </Button>
       )}
     </li>
@@ -98,7 +91,7 @@ export function VendorDrawer({
       await endpoints.contracts.remove(eventId, c.id, confirm);
       setPending(null);
       await refresh();
-      toast.success("החוזה נמחק");
+      toast.success(he.drawer.deleted);
       onClose();
     } catch (e) {
       if (isConfirmationRequired(e)) {
@@ -130,10 +123,10 @@ export function VendorDrawer({
 
   const links = c
     ? [
-        { href: c.websiteUrl, icon: Globe, label: "אתר" },
-        { href: c.instagramUrl, icon: Camera, label: "אינסטגרם" },
-        { href: c.facebookUrl, icon: AtSign, label: "פייסבוק" },
-        { href: c.contractUrl, icon: FileText, label: "החוזה" },
+        { href: c.websiteUrl, icon: Globe, label: he.drawer.links.website },
+        { href: c.instagramUrl, icon: Camera, label: he.drawer.links.instagram },
+        { href: c.facebookUrl, icon: AtSign, label: he.drawer.links.facebook },
+        { href: c.contractUrl, icon: FileText, label: he.drawer.links.contract },
       ].filter((l): l is typeof l & { href: string } => !!l.href)
     : [];
 
@@ -156,15 +149,15 @@ export function VendorDrawer({
                 onClick={() => setPending({ kind: "delete" })}
               >
                 <Trash2 className="size-4" />
-                מחיקה
+                {he.common.delete}
               </Button>
               <Button variant="secondary" onClick={() => setEditOpen(true)}>
                 <Pencil className="size-4" />
-                עריכה
+                {he.common.edit}
               </Button>
               <Button onClick={() => setPayFor({ itemId: null })}>
                 <Plus className="size-4" />
-                הוספת תשלום
+                {he.payments.add}
               </Button>
             </>
           )
@@ -176,10 +169,10 @@ export function VendorDrawer({
           <div className="grid gap-6">
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                { label: "סה״כ", value: c.totalAmountAgorot },
-                { label: "שולם", value: c.paidAgorot },
+                { label: he.drawer.total, value: c.totalAmountAgorot },
+                { label: he.drawer.paid, value: c.paidAgorot },
                 {
-                  label: c.overpaidAgorot > 0 ? "שולם ביתר" : "נותר",
+                  label: c.overpaidAgorot > 0 ? he.drawer.overpaid : he.drawer.remaining,
                   value: c.overpaidAgorot > 0 ? c.overpaidAgorot : c.remainingAgorot,
                 },
               ].map((s) => (
@@ -227,11 +220,11 @@ export function VendorDrawer({
 
             <section>
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold">מועדי תשלום</h3>
+                <h3 className="font-semibold">{he.drawer.schedule}</h3>
                 {editable && (
                   <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)}>
                     <Pencil className="size-4" />
-                    עריכת המועדים
+                    {he.drawer.editSchedule}
                   </Button>
                 )}
               </div>
@@ -246,14 +239,14 @@ export function VendorDrawer({
                 ))}
                 {c.schedule.length === 0 && (
                   <li className="rounded-xl bg-soft p-4 text-center text-sm text-muted">
-                    עוד אין מועדי תשלום
+                    {he.drawer.noSchedule}
                   </li>
                 )}
               </ul>
             </section>
 
             <section>
-              <h3 className="mb-3 font-semibold">היסטוריית תשלומים</h3>
+              <h3 className="mb-3 font-semibold">{he.drawer.history}</h3>
               <ul className="grid gap-2">
                 {c.payments.map((p) => (
                   <PaymentRow
@@ -267,7 +260,7 @@ export function VendorDrawer({
                 ))}
                 {c.payments.length === 0 && (
                   <li className="rounded-xl bg-soft p-4 text-center text-sm text-muted">
-                    עוד לא נרשמו תשלומים
+                    {he.drawer.noPayments}
                   </li>
                 )}
               </ul>
@@ -280,7 +273,7 @@ export function VendorDrawer({
               <section className="grid gap-3 text-sm">
                 {c.includedItems.length > 0 && (
                   <div>
-                    <p className="mb-1 font-semibold">כלול</p>
+                    <p className="mb-1 font-semibold">{he.drawer.included}</p>
                     <ul className="list-disc ps-5 text-muted">
                       {c.includedItems.map((i) => (
                         <li key={i}>{i}</li>
@@ -290,7 +283,7 @@ export function VendorDrawer({
                 )}
                 {c.excludedItems.length > 0 && (
                   <div>
-                    <p className="mb-1 font-semibold">לא כלול</p>
+                    <p className="mb-1 font-semibold">{he.drawer.excluded}</p>
                     <ul className="list-disc ps-5 text-muted">
                       {c.excludedItems.map((i) => (
                         <li key={i}>{i}</li>
@@ -300,13 +293,13 @@ export function VendorDrawer({
                 )}
                 {c.cancellationPolicy && (
                   <div>
-                    <p className="mb-1 font-semibold">מדיניות ביטול</p>
+                    <p className="mb-1 font-semibold">{he.drawer.cancellation}</p>
                     <p className="whitespace-pre-line text-muted">{c.cancellationPolicy}</p>
                   </div>
                 )}
                 {c.notes && (
                   <div>
-                    <p className="mb-1 font-semibold">הערות</p>
+                    <p className="mb-1 font-semibold">{he.drawer.notes}</p>
                     <p className="whitespace-pre-line text-muted">{c.notes}</p>
                   </div>
                 )}
@@ -341,21 +334,21 @@ export function VendorDrawer({
         danger
         loading={busy}
         onConfirm={runPending}
-        title={pending?.kind === "delete" ? "למחוק את החוזה?" : "למחוק את התשלום?"}
-        confirmLabel="מחיקה"
+        title={pending?.kind === "delete" ? he.drawer.deleteContractTitle : he.drawer.deletePaymentTitle}
+        confirmLabel={he.common.delete}
         description={
           pending?.kind === "delete" ? (
             pending.paymentCount ? (
               <>
-                לחוזה הזה רשומים {pending.paymentCount} תשלומים בסך{" "}
-                <span className="num font-semibold">{formatILS(pending.paidAgorot)}</span>. הם יימחקו יחד
-                איתו.
+                {he.drawer.deleteWithPaymentsBefore(pending.paymentCount)}
+                <span className="num font-semibold">{formatILS(pending.paidAgorot)}</span>
+                {he.drawer.deleteWithPaymentsAfter}
               </>
             ) : (
-              "החוזה ומועדי התשלום שלו יימחקו."
+              he.drawer.deleteContractText
             )
           ) : (
-            "התשלום יוסר מההיסטוריה ומהסיכומים."
+            he.drawer.deletePaymentText
           )
         }
       />

@@ -66,6 +66,8 @@ Documentation/SESSION_HANDOFF.md  this file
 
 Key API files: `apps/api/src/app.ts` (route registration, auth handler, health), `env.ts` (env validation), `auth.ts` (Better Auth config + password-policy hook), `lib/access.ts` (`eventAccess` → 404 for non-members), `services/ledger.ts` (loads contracts/schedule/payments/files, computes DTOs), `routes/{me,events,contracts,cover,payment-files,invitations}.ts`, `lib/auth-limits.ts` (5/min login & reset limiter).
 
+UI text: every user-facing string is in `packages/i18n/src/he.ts`, grouped by screen; an ESLint rule rejects Hebrew literals in `apps/web/src`. E2E: `e2e/` (Playwright, `pnpm e2e`, separate CI job).
+
 Key web files: `components/shell/app-shell.tsx` (header, nav, event switcher, `UserMenu`), `components/contracts/contract-dialog.tsx` (view/edit contract form), `components/contracts/vendor-drawer.tsx` (side panel), `components/payments/*`, `app/e/[eventId]/*` pages, `app/events/page.tsx`, `app/(auth)/*` incl. `invite/[token]`, `app/settings/page.tsx` + `components/settings/*` (profile, password, sessions, data cards), `components/shell/plain-shell.tsx` (header shared by `/events` and `/settings`).
 
 ---
@@ -147,11 +149,10 @@ User's own commits (FUTURE_WORK edits only): `d03c2f2`, `4dc4199`, `45b2d72`, `1
 
 From `Future/FUTURE_WORK.txt` (authoritative; re-read it — the user edits it):
 
-1. **Stage 1 leftovers** (settings screen, "remember me" 24h and rate limits are done ✅)
-   1. All UI strings into `packages/i18n/src/he.ts` (today only labels/errors).
-   2. Playwright E2E inside the repo + CI (today ad hoc from the scratchpad).
-   3. Sign in with Apple (needs Apple Developer account, $99/yr).
-   4. Change email address in settings (after the email domain exists).
+1. **Stage 1 leftovers** (all done except:)
+   1. Sign in with Apple — deferred until the mobile app (stage 5).
+   2. Google sign-in — code ready, free; waiting for the final domain (redirect URI + consent screen name).
+   3. Change email address in settings (after the email domain exists).
 2. **Domain & email (before real users):** buy domain → Vercel domain → update `WEB_ORIGIN` (Railway) and Google redirect URI → Resend domain (SPF, DKIM, DMARC) → `EMAIL_FROM=סגרנו <noreply@domain>` → **remove `REQUIRE_EMAIL_VERIFICATION`** so verification is required again.
 3. **Phase 2 — AI contract analysis** (see FUTURE_WORK §2, `docs/PLAN.txt` §6, `datasets/contracts/SCHEMA_GAPS.md`): R2 storage (also move cover photos + payment files from DB), `contract_file`/`contract_analysis` tables, upload endpoint, `apps/worker` (pg-boss), text extraction, OCR, Groq call using `Future/contract_extraction.schema.json`, review UI, `pnpm eval:contracts`, label 5–10 real contracts with `pnpm dataset:validate`. Decisions needed: category guess field, where to store confidence/warnings/raw_text, event-date mismatch warning, VAT normalization (plan Q7).
 4. **Phase 3 — reminders** (Resend + WhatsApp via Meta; user handles Meta Business setup).

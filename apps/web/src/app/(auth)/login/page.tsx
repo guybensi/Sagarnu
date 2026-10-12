@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInInput } from "@sagarnu/schemas";
 import Link from "next/link";
@@ -40,21 +41,29 @@ function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <div>
-        <h1 className="text-2xl font-bold">התחברות</h1>
-        <p className="mt-1 text-sm text-muted">טוב לראות אותך שוב</p>
+        <h1 className="text-2xl font-bold">{he.auth.login.title}</h1>
+        <p className="mt-1 text-sm text-muted">{he.auth.login.subtitle}</p>
       </div>
       {deleted && (
         <p role="status" className="rounded-xl bg-success-soft p-3 text-sm text-success">
-          החשבון נמחק, וכל המידע שהיה רק שלך נמחק איתו.
+          {he.auth.login.accountDeleted}
         </p>
       )}
 
       <GoogleButton />
 
-      <Field label="אימייל" htmlFor="email" error={form.formState.errors.email && "אימייל לא תקין"}>
+      <Field
+        label={he.auth.email}
+        htmlFor="email"
+        error={form.formState.errors.email && he.auth.invalidEmail}
+      >
         <Input id="email" type="email" dir="ltr" autoComplete="email" {...form.register("email")} />
       </Field>
-      <Field label="סיסמה" htmlFor="password" error={form.formState.errors.password && "צריך להזין סיסמה"}>
+      <Field
+        label={he.auth.password}
+        htmlFor="password"
+        error={form.formState.errors.password && he.auth.passwordRequired}
+      >
         <PasswordInput id="password" autoComplete="current-password" {...form.register("password")} />
       </Field>
 
@@ -63,11 +72,11 @@ function LoginForm() {
           control={form.control}
           name="rememberMe"
           render={({ field }) => (
-            <Checkbox checked={field.value} onChange={field.onChange} label="השאר אותי מחובר" />
+            <Checkbox checked={field.value} onChange={field.onChange} label={he.auth.login.rememberMe} />
           )}
         />
         <Link href="/forgot-password" className="text-sm text-brand-600 hover:underline">
-          שכחתי סיסמה
+          {he.auth.forgotPassword}
         </Link>
       </div>
 
@@ -76,14 +85,14 @@ function LoginForm() {
           <p>{authErrorMessage(error)}</p>
           {isWrongCredentials(error) && (
             <p className="mt-1 text-ink">
-              עוד לא נרשמת?{" "}
+              {he.auth.login.notRegistered}{" "}
               <Link
                 href={`/signup?email=${encodeURIComponent(email)}${next ? `&next=${encodeURIComponent(next)}` : ""}`}
                 className="font-medium text-brand-600 underline"
               >
-                יצירת חשבון
+                {he.auth.login.createAccount}
               </Link>{" "}
-              · או בדקו את הסיסמה ונסו שוב
+              {he.auth.login.orCheckPassword}
             </p>
           )}
           {error.code === "EMAIL_NOT_VERIFIED" && (
@@ -91,20 +100,20 @@ function LoginForm() {
               className="mt-1 inline-block font-medium underline"
               href={`/verify-email?email=${encodeURIComponent(email)}`}
             >
-              שליחה חוזרת של קישור האימות
+              {he.auth.login.resendVerification}
             </Link>
           )}
         </div>
       )}
 
       <Button type="submit" size="lg" loading={form.formState.isSubmitting}>
-        התחברות
+        {he.auth.login.submit}
       </Button>
 
       <p className="text-center text-sm text-muted">
-        אין לך חשבון?{" "}
+        {he.auth.login.noAccount}{" "}
         <Link href={withNext("/signup", next)} className="font-medium text-brand-600 hover:underline">
-          הרשמה
+          {he.auth.login.toSignup}
         </Link>
       </p>
     </form>

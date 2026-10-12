@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { useMe } from "@sagarnu/api-client";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -19,9 +20,9 @@ export default function SettingsPage() {
           <Link href="/" className="mb-2 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
             {/* Lucide arrows are not mirrored in RTL: "back" points right. */}
             <ChevronRight className="size-4" />
-            חזרה
+            {he.common.back}
           </Link>
-          <h1 className="text-2xl font-bold">הגדרות החשבון</h1>
+          <h1 className="text-2xl font-bold">{he.shell.settings}</h1>
         </div>
         {me.isPending ? (
           <Spinner />

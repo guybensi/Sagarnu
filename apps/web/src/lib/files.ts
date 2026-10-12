@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { PAYMENT_FILE_MAX_BYTES } from "@sagarnu/schemas";
 
 export class FileTooLargeError extends Error {}
@@ -53,8 +54,8 @@ async function imageToJpeg(file: File): Promise<string> {
 
 /** Hebrew message for a failed conversion. */
 export function fileErrorMessage(error: unknown): string | null {
-  if (error instanceof FileTooLargeError) return "הקובץ גדול מדי (עד 5MB)";
-  if (error instanceof UnsupportedFileError) return "אפשר להעלות PDF או תמונה (JPG, PNG)";
+  if (error instanceof FileTooLargeError) return he.ui.fileTooLarge;
+  if (error instanceof UnsupportedFileError) return he.ui.fileUnsupported;
   return null;
 }
 

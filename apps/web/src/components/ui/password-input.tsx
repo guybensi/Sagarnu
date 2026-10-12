@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { Eye, EyeOff } from "lucide-react";
 import { useState, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
@@ -14,7 +15,7 @@ export function PasswordInput({ className, ...props }: Omit<ComponentProps<"inpu
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        aria-label={visible ? "הסתרת הסיסמה" : "הצגת הסיסמה"}
+        aria-label={visible ? he.ui.hidePassword : he.ui.showPassword}
         aria-pressed={visible}
         className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted hover:text-ink"
       >

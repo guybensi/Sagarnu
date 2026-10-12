@@ -2,7 +2,7 @@
 
 import { endpoints, keys, useMe } from "@sagarnu/api-client";
 import { formatPhone, normalizePhone, type UserType } from "@sagarnu/domain";
-import { formatDateTime } from "@sagarnu/i18n";
+import { formatDateTime, he } from "@sagarnu/i18n";
 import type { MeDto } from "@sagarnu/schemas";
 import { useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Heart, UserRound } from "lucide-react";
@@ -15,8 +15,8 @@ import { cn } from "@/lib/cn";
 import { toastError } from "@/lib/errors";
 
 const TYPES = [
-  { value: "couple", label: "אנחנו זוג", hint: "אירוע אחד שלנו", icon: Heart },
-  { value: "planner", label: "מפיק/ת אירועים", hint: 'כמה אירועים, מסך "האירועים שלי"', icon: Briefcase },
+  { value: "couple", label: he.auth.signup.couple, hint: he.settings.profile.coupleHint, icon: Heart },
+  { value: "planner", label: he.auth.signup.planner, hint: he.settings.profile.plannerHint, icon: Briefcase },
 ] as const;
 
 type Form = { name: string; userType: UserType; phone: string; whatsapp: boolean };
@@ -51,9 +51,9 @@ export function ProfileCard() {
     const name = form.name.trim();
     const phoneE164 = form.phone.trim() === "" ? null : normalizePhone(form.phone);
     const next: typeof errors = {};
-    if (name.length < 2) next.name = "לפחות 2 תווים";
-    if (form.phone.trim() !== "" && !phoneE164) next.phone = "מספר טלפון לא תקין";
-    if (form.whatsapp && !form.phone.trim()) next.phone = "כדי לקבל תזכורות בוואטסאפ צריך מספר טלפון";
+    if (name.length < 2) next.name = he.auth.nameTooShort;
+    if (form.phone.trim() !== "" && !phoneE164) next.phone = he.fieldErrors.invalid_phone;
+    if (form.whatsapp && !form.phone.trim()) next.phone = he.settings.profile.whatsappNeedsPhone;
     if (Object.keys(next).length > 0) return setErrors(next);
     setSaving(true);
     try {
@@ -65,7 +65,7 @@ export function ProfileCard() {
       });
       qc.setQueryData(keys.me, updated);
       setForm(fromMe(updated));
-      toast.success("הפרטים נשמרו");
+      toast.success(he.settings.profile.saved);
     } catch (err) {
       toastError(err);
     } finally {
@@ -75,10 +75,10 @@ export function ProfileCard() {
 
   return (
     <Card>
-      <CardTitle icon={<UserRound className="size-5" />}>פרטים אישיים</CardTitle>
+      <CardTitle icon={<UserRound className="size-5" />}>{he.settings.profile.title}</CardTitle>
       <form onSubmit={submit} className="grid gap-5">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="שם" htmlFor="name" error={errors.name}>
+          <Field label={he.auth.name} htmlFor="name" error={errors.name}>
             <Input
               id="name"
               autoComplete="name"
@@ -87,14 +87,18 @@ export function ProfileCard() {
               onChange={(e) => set("name", e.target.value)}
             />
           </Field>
-          <Field label="אימייל" htmlFor="email" hint="אי אפשר לשנות כרגע את כתובת האימייל">
+          <Field label={he.auth.email} htmlFor="email" hint={he.settings.profile.emailLocked}>
             <Input id="email" dir="ltr" value={me.data.email} disabled />
           </Field>
         </div>
 
         <div className="grid gap-2">
-          <p className="text-sm font-medium">סוג החשבון</p>
-          <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="סוג החשבון">
+          <p className="text-sm font-medium">{he.settings.profile.accountType}</p>
+          <div
+            className="grid gap-3 sm:grid-cols-2"
+            role="radiogroup"
+            aria-label={he.settings.profile.accountType}
+          >
             {TYPES.map((t) => (
               <button
                 key={t.value}
@@ -121,10 +125,10 @@ export function ProfileCard() {
 
         <div className="grid gap-3 rounded-2xl bg-soft/60 p-4">
           <Field
-            label="טלפון נייד"
+            label={he.settings.profile.phone}
             htmlFor="phone"
             error={errors.phone}
-            hint="לתזכורות תשלום בוואטסאפ. לא נעביר את המספר לאף אחד"
+            hint={he.settings.profile.phoneHint}
             className="sm:max-w-72"
           >
             <Input
@@ -142,26 +146,25 @@ export function ProfileCard() {
           <Checkbox
             checked={form.whatsapp}
             onChange={(v) => set("whatsapp", v)}
-            label="אני מסכים/ה לקבל תזכורות תשלום בוואטסאפ"
+            label={he.settings.profile.whatsappConsent}
           />
           {me.data.whatsappOptInAt && (
             <p className="text-xs text-muted">
-              ההסכמה ניתנה ב־<span className="num">{formatDateTime(me.data.whatsappOptInAt)}</span>. אפשר לבטל
-              בכל רגע.
+              {he.settings.profile.consentGivenBefore}
+              <span className="num">{formatDateTime(me.data.whatsappOptInAt)}</span>
+              {he.settings.profile.consentGivenAfter}
             </p>
           )}
-          <p className="text-xs text-muted">
-            התזכורות בוואטסאפ עוד בבנייה. כשיופעלו, הן יישלחו רק אם סימנת כאן.
-          </p>
+          <p className="text-xs text-muted">{he.settings.profile.whatsappComingSoon}</p>
         </div>
 
         <div className="flex gap-3">
           <Button type="submit" loading={saving} disabled={!dirty}>
-            שמירה
+            {he.common.save}
           </Button>
           {dirty && (
             <Button variant="ghost" onClick={() => (setForm(fromMe(me.data!)), setErrors({}))}>
-              ביטול שינויים
+              {he.settings.profile.discard}
             </Button>
           )}
         </div>

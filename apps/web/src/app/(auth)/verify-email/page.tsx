@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -21,7 +22,7 @@ function VerifyEmail() {
     });
     setLoading(false);
     if (error) toast.error(authErrorMessage(error));
-    else toast.success("שלחנו שוב");
+    else toast.success(he.auth.verify.resent);
   };
 
   return (
@@ -29,18 +30,19 @@ function VerifyEmail() {
       <div className="rounded-full bg-brand-50 p-4 text-brand-500">
         <MailCheck className="size-7" />
       </div>
-      <h1 className="text-xl font-bold">כמעט שם! מאמתים את המייל</h1>
+      <h1 className="text-xl font-bold">{he.auth.verify.title}</h1>
       <p className="text-sm leading-relaxed text-muted">
-        שלחנו קישור אימות {email && <span className="num font-medium text-ink">{email}</span>}. אחרי הלחיצה
-        עליו תועברו ישר לאפליקציה.
+        {he.auth.verify.sentBefore}
+        {email && <span className="num font-medium text-ink">{email}</span>}
+        {he.auth.verify.sentAfter}
       </p>
       {email && (
         <Button variant="secondary" onClick={resend} loading={loading}>
-          לא הגיע? שליחה חוזרת
+          {he.auth.verify.resend}
         </Button>
       )}
       <Link href="/login" className="text-sm text-muted hover:underline">
-        חזרה להתחברות
+        {he.auth.backToLogin}
       </Link>
     </div>
   );

@@ -40,7 +40,7 @@ function EventCard({ event, today }: { event: EventDto; today: string }) {
             {event.eventDate ? (
               <span className="num">{formatDate(event.eventDate)}</span>
             ) : (
-              "עוד לא נקבע תאריך"
+              he.common.noDateYet
             )}
           </p>
           {place && (
@@ -52,7 +52,8 @@ function EventCard({ event, today }: { event: EventDto; today: string }) {
           {event.guestCount != null && (
             <p className="flex items-center gap-1.5">
               <Users className="size-4" />
-              <span className="num">{formatNumber(event.guestCount)}</span> מוזמנים
+              <span className="num">{formatNumber(event.guestCount)}</span>
+              {he.events.guests}
             </p>
           )}
         </div>
@@ -69,12 +70,13 @@ function EventCard({ event, today }: { event: EventDto; today: string }) {
           >
             {days > 0 ? (
               <>
-                <span className="num">{formatNumber(days)}</span> ימים לאירוע
+                <span className="num">{formatNumber(days)}</span>
+                {he.events.daysLeft}
               </>
             ) : days === 0 ? (
-              "היום!"
+              he.events.today
             ) : (
-              "האירוע עבר"
+              he.events.past
             )}
           </p>
         )}
@@ -95,14 +97,14 @@ export default function EventsPage() {
     <PlainShell next="/events">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">האירועים שלי</h1>
-          <p className="text-sm text-muted">כל האירועים שאת/ה מנהל/ת או שהוזמנת אליהם</p>
+          <h1 className="text-2xl font-bold">{he.events.title}</h1>
+          <p className="text-sm text-muted">{he.events.subtitle}</p>
         </div>
         {canCreate && (
           <Link href="/onboarding">
             <Button>
               <Plus className="size-4" />
-              אירוע חדש
+              {he.shell.newEvent}
             </Button>
           </Link>
         )}
@@ -112,13 +114,13 @@ export default function EventsPage() {
       ) : !events.data || events.data.length === 0 ? (
         <EmptyState
           icon={<CalendarHeart className="size-6" />}
-          title="עוד אין אירועים"
-          description="יוצרים אירוע, ממלאים את הפרטים ומזמינים את בני הזוג"
+          title={he.events.emptyTitle}
+          description={he.events.emptyText}
           action={
             <Link href="/onboarding">
               <Button>
                 <Plus className="size-4" />
-                אירוע חדש
+                {he.shell.newEvent}
               </Button>
             </Link>
           }

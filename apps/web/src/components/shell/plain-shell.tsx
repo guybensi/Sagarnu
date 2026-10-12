@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -20,7 +21,7 @@ export function PlainShell({ next, children }: { next: string; children: ReactNo
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-line bg-canvas/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
-          <Link href="/" aria-label="לדף הבית">
+          <Link href="/" aria-label={he.common.home}>
             <Logo />
           </Link>
           <div className="flex-1" />

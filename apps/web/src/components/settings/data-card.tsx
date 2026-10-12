@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { ApiRequestError, endpoints, useEvents, useMe } from "@sagarnu/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Download, ShieldCheck, Trash2 } from "lucide-react";
@@ -46,7 +47,7 @@ function DeleteAccountDialog({
   const remove = async () => {
     setError("");
     setBlocking([]);
-    if (hasPassword && !password) return setError("צריך להקליד סיסמה");
+    if (hasPassword && !password) return setError(he.settings.data.passwordRequired);
     setDeleting(true);
     try {
       await endpoints.me.remove({ password: hasPassword ? password : undefined, confirm: true });
@@ -69,34 +70,28 @@ function DeleteAccountDialog({
     <Dialog
       open={open}
       onOpenChange={close}
-      title="מחיקת החשבון"
+      title={he.settings.data.deleteAccount}
       footer={
         <>
           <Button variant="secondary" onClick={() => close(false)}>
-            ביטול
+            {he.common.cancel}
           </Button>
           <Button variant="danger" loading={deleting} disabled={!sure} onClick={remove}>
-            מחיקה לצמיתות
+            {he.settings.data.deleteForever}
           </Button>
         </>
       }
     >
       <div className="grid gap-4 text-sm leading-relaxed">
         <p>
-          החשבון, ההתחברויות וההרשאות שלך יימחקו.{" "}
-          {owned.length > 0 && (
-            <>
-              אירועים שרק את/ה חבר/ה בהם יימחקו יחד עם כל החוזים, התשלומים והקבצים שלהם. אירועים משותפים
-              נשארים אצל שאר החברים.
-            </>
-          )}{" "}
-          <span className="font-medium">אי אפשר לבטל את זה.</span>
+          {he.settings.data.willDelete} {owned.length > 0 && he.settings.data.willDeleteOwned}{" "}
+          <span className="font-medium">{he.settings.data.irreversible}</span>
         </p>
-        <p className="text-muted">כדאי להוריד קודם עותק של המידע (כפתור &quot;הורדת המידע שלי&quot;).</p>
+        <p className="text-muted">{he.settings.data.exportFirst}</p>
 
         {blocking.length > 0 && (
           <div role="alert" className="rounded-xl bg-warning-soft p-3 text-warning">
-            <p className="font-medium">קודם צריך למנות בעלים נוספים לאירועים המשותפים:</p>
+            <p className="font-medium">{he.settings.data.needOtherOwners}</p>
             <ul className="mt-1 list-disc ps-5">
               {blocking.map((ev) => (
                 <li key={ev.id}>
@@ -106,14 +101,12 @@ function DeleteAccountDialog({
                 </li>
               ))}
             </ul>
-            <p className="mt-1 text-xs">
-              במסך השיתוף משנים את ההרשאה של אחד החברים ל&quot;בעלים&quot;, או מוחקים את האירוע.
-            </p>
+            <p className="mt-1 text-xs">{he.settings.data.needOtherOwnersHint}</p>
           </div>
         )}
 
         {hasPassword && (
-          <Field label="הסיסמה שלך" htmlFor="deletePassword">
+          <Field label={he.settings.data.yourPassword} htmlFor="deletePassword">
             <PasswordInput
               id="deletePassword"
               autoComplete="current-password"
@@ -122,7 +115,7 @@ function DeleteAccountDialog({
             />
           </Field>
         )}
-        <Checkbox checked={sure} onChange={setSure} label="הבנתי, למחוק את החשבון שלי" />
+        <Checkbox checked={sure} onChange={setSure} label={he.settings.data.confirm} />
         {error && (
           <p role="alert" className="text-danger">
             {error}
@@ -137,29 +130,27 @@ export function DataCard() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   return (
     <Card>
-      <CardTitle icon={<ShieldCheck className="size-5" />}>המידע שלי</CardTitle>
+      <CardTitle icon={<ShieldCheck className="size-5" />}>{he.settings.data.title}</CardTitle>
       <div className="grid gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium">הורדת המידע שלי</p>
-            <p className="text-xs text-muted">
-              קובץ JSON עם הפרטים, האירועים, החוזים והתשלומים. הקבצים המצורפים נשארים להורדה מתוך האירוע.
-            </p>
+            <p className="text-sm font-medium">{he.settings.data.export}</p>
+            <p className="text-xs text-muted">{he.settings.data.exportHint}</p>
           </div>
           {/* The response is an attachment, so the browser downloads it and stays on this page. */}
           <Button variant="secondary" onClick={() => window.location.assign(endpoints.me.exportUrl)}>
             <Download className="size-4" />
-            הורדת המידע שלי
+            {he.settings.data.export}
           </Button>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
           <div>
-            <p className="text-sm font-medium text-danger">מחיקת החשבון</p>
-            <p className="text-xs text-muted">מוחק את החשבון ואת האירועים שרק את/ה חבר/ה בהם.</p>
+            <p className="text-sm font-medium text-danger">{he.settings.data.deleteAccount}</p>
+            <p className="text-xs text-muted">{he.settings.data.deleteHint}</p>
           </div>
           <Button variant="secondary" className="text-danger" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="size-4" />
-            מחיקת החשבון
+            {he.settings.data.deleteAccount}
           </Button>
         </div>
       </div>

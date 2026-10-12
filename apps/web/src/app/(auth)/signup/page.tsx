@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema, type SignUpInput } from "@sagarnu/schemas";
 import { Heart, Briefcase } from "lucide-react";
@@ -22,8 +23,8 @@ import { safeNext, withNext } from "@/lib/next-path";
 import { cn } from "@/lib/cn";
 
 const TYPES = [
-  { value: "couple", label: "אנחנו זוג", hint: "מתחתנים ומנהלים את התקציב", icon: Heart },
-  { value: "planner", label: "מפיק/ת אירועים", hint: "מנהל/ת כמה אירועים", icon: Briefcase },
+  { value: "couple", label: he.auth.signup.couple, hint: he.auth.signup.coupleHint, icon: Heart },
+  { value: "planner", label: he.auth.signup.planner, hint: he.auth.signup.plannerHint, icon: Briefcase },
 ] as const;
 
 function SignUpForm() {
@@ -57,8 +58,8 @@ function SignUpForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <div>
-        <h1 className="text-2xl font-bold">יוצרים חשבון</h1>
-        <p className="mt-1 text-sm text-muted">כמה פרטים ומתחילים לסגור ספקים</p>
+        <h1 className="text-2xl font-bold">{he.auth.signup.title}</h1>
+        <p className="mt-1 text-sm text-muted">{he.auth.signup.subtitle}</p>
       </div>
 
       <Controller
@@ -91,13 +92,21 @@ function SignUpForm() {
 
       <GoogleButton />
 
-      <Field label="שם" htmlFor="name" error={form.formState.errors.name && "לפחות 2 תווים"}>
+      <Field label={he.auth.name} htmlFor="name" error={form.formState.errors.name && he.auth.nameTooShort}>
         <Input id="name" autoComplete="name" {...form.register("name")} />
       </Field>
-      <Field label="אימייל" htmlFor="email" error={form.formState.errors.email && "אימייל לא תקין"}>
+      <Field
+        label={he.auth.email}
+        htmlFor="email"
+        error={form.formState.errors.email && he.auth.invalidEmail}
+      >
         <Input id="email" type="email" dir="ltr" autoComplete="email" {...form.register("email")} />
       </Field>
-      <Field label="סיסמה" htmlFor="password" error={passwordInvalid ? "הסיסמה לא עומדת בדרישות" : undefined}>
+      <Field
+        label={he.auth.password}
+        htmlFor="password"
+        error={passwordInvalid ? he.auth.passwordWeak : undefined}
+      >
         <PasswordInput
           id="password"
           autoComplete="new-password"
@@ -113,11 +122,11 @@ function SignUpForm() {
           {isExistingUser(error) && (
             <p className="mt-1 text-ink">
               <Link href="/login" className="font-medium text-brand-600 underline">
-                להתחברות
+                {he.auth.signup.toLogin}
               </Link>{" "}
               ·{" "}
               <Link href="/forgot-password" className="font-medium text-brand-600 underline">
-                שכחתי סיסמה
+                {he.auth.forgotPassword}
               </Link>
             </p>
           )}
@@ -125,13 +134,13 @@ function SignUpForm() {
       )}
 
       <Button type="submit" size="lg" loading={form.formState.isSubmitting}>
-        הרשמה
+        {he.auth.signup.submit}
       </Button>
 
       <p className="text-center text-sm text-muted">
-        כבר יש לך חשבון?{" "}
+        {he.auth.signup.haveAccount}{" "}
         <Link href={withNext("/login", next)} className="font-medium text-brand-600 hover:underline">
-          התחברות
+          {he.auth.signup.login}
         </Link>
       </p>
     </form>

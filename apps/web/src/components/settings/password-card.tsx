@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { keys, useMe } from "@sagarnu/api-client";
 import { failedPasswordRules } from "@sagarnu/schemas";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,11 +31,11 @@ export function PasswordCard() {
   if (!me.data.hasPassword) {
     return (
       <Card>
-        <CardTitle icon={<KeyRound className="size-5" />}>סיסמה</CardTitle>
+        <CardTitle icon={<KeyRound className="size-5" />}>{he.settings.password.noPasswordTitle}</CardTitle>
         <p className="text-sm text-muted">
-          החשבון מחובר דרך Google ואין לו סיסמה. אפשר להוסיף סיסמה דרך{" "}
+          {he.settings.password.googleOnly}{" "}
           <Link href="/forgot-password" className="font-medium text-brand-600 hover:underline">
-            איפוס סיסמה
+            {he.settings.password.resetLink}
           </Link>
           .
         </p>
@@ -49,10 +50,10 @@ export function PasswordCard() {
     e.preventDefault();
     setTried(true);
     setError("");
-    if (!current) return setError("צריך להקליד את הסיסמה הנוכחית");
-    if (weak) return setError("הסיסמה החדשה לא עומדת בדרישות");
-    if (next !== confirm) return setError("הסיסמאות לא זהות");
-    if (next === current) return setError("הסיסמה החדשה זהה לנוכחית");
+    if (!current) return setError(he.settings.password.currentRequired);
+    if (weak) return setError(he.settings.password.newWeak);
+    if (next !== confirm) return setError(he.fieldErrors.password_mismatch);
+    if (next === current) return setError(he.settings.password.sameAsCurrent);
     setSaving(true);
     const { error } = await authClient.changePassword({
       currentPassword: current,
@@ -66,14 +67,14 @@ export function PasswordCard() {
     setConfirm("");
     setTried(false);
     await qc.invalidateQueries({ queryKey: keys.sessions });
-    toast.success(signOutOthers ? "הסיסמה עודכנה, ושאר המכשירים נותקו" : "הסיסמה עודכנה");
+    toast.success(signOutOthers ? he.settings.password.updatedSignedOut : he.settings.password.updated);
   };
 
   return (
     <Card>
-      <CardTitle icon={<KeyRound className="size-5" />}>שינוי סיסמה</CardTitle>
+      <CardTitle icon={<KeyRound className="size-5" />}>{he.settings.password.title}</CardTitle>
       <form onSubmit={submit} className="grid gap-4 sm:max-w-md">
-        <Field label="סיסמה נוכחית" htmlFor="currentPassword">
+        <Field label={he.settings.password.current} htmlFor="currentPassword">
           <PasswordInput
             id="currentPassword"
             autoComplete="current-password"
@@ -81,7 +82,7 @@ export function PasswordCard() {
             onChange={(e) => setCurrent(e.target.value)}
           />
         </Field>
-        <Field label="סיסמה חדשה" htmlFor="newPassword">
+        <Field label={he.settings.password.new} htmlFor="newPassword">
           <PasswordInput
             id="newPassword"
             autoComplete="new-password"
@@ -92,9 +93,9 @@ export function PasswordCard() {
         </Field>
         <PasswordChecklist password={next} highlightFailed={tried} />
         <Field
-          label="אימות הסיסמה החדשה"
+          label={he.settings.password.confirm}
           htmlFor="confirmPassword"
-          error={mismatch ? "הסיסמאות לא זהות" : undefined}
+          error={mismatch ? he.fieldErrors.password_mismatch : undefined}
         >
           <PasswordInput
             id="confirmPassword"
@@ -104,14 +105,18 @@ export function PasswordCard() {
             onChange={(e) => setConfirm(e.target.value)}
           />
         </Field>
-        <Checkbox checked={signOutOthers} onChange={setSignOutOthers} label="לנתק את כל שאר המכשירים" />
+        <Checkbox
+          checked={signOutOthers}
+          onChange={setSignOutOthers}
+          label={he.settings.password.signOutOthers}
+        />
         {error && (
           <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}
         <Button type="submit" loading={saving} className="justify-self-start">
-          עדכון סיסמה
+          {he.settings.password.submit}
         </Button>
       </form>
     </Card>

@@ -2,7 +2,7 @@
 
 import { endpoints } from "@sagarnu/api-client";
 import { daysUntil, todayIso } from "@sagarnu/domain";
-import { formatDate, formatNumber } from "@sagarnu/i18n";
+import { formatDate, formatNumber, he } from "@sagarnu/i18n";
 import type { EventDto } from "@sagarnu/schemas";
 import { CalendarPlus, Camera, ImagePlus, MapPin, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -36,10 +36,9 @@ function PhotoControls({ event }: { event: EventDto }) {
     try {
       await endpoints.events.setCover(event.id, await resizeImage(file, 1600));
       await refresh();
-      toast.success("התמונה נשמרה");
+      toast.success(he.hero.photoSaved);
     } catch (e) {
-      if (e instanceof DOMException || e instanceof TypeError)
-        toast.error("לא הצלחנו לקרוא את התמונה. נסו קובץ JPG או PNG");
+      if (e instanceof DOMException || e instanceof TypeError) toast.error(he.hero.photoUnreadable);
       else toastError(e);
     } finally {
       setBusy(false);
@@ -76,13 +75,13 @@ function PhotoControls({ event }: { event: EventDto }) {
         className="border-0 bg-white/20 text-white backdrop-blur hover:bg-white/30"
       >
         {event.coverPhotoUrl ? <Camera className="size-4" /> : <ImagePlus className="size-4" />}
-        {event.coverPhotoUrl ? "החלפת תמונה" : "הוספת תמונה"}
+        {event.coverPhotoUrl ? he.hero.replacePhoto : he.hero.addPhoto}
       </Button>
       {event.coverPhotoUrl && (
         <Button
           size="icon"
           variant="secondary"
-          aria-label="הסרת התמונה"
+          aria-label={he.hero.removePhoto}
           disabled={busy}
           onClick={remove}
           className="size-8 border-0 bg-white/20 text-white backdrop-blur hover:bg-white/30"
@@ -126,22 +125,22 @@ export function EventHero({ event }: { event: EventDto }) {
 
         {days == null ? (
           <>
-            <h2 className="mt-1 text-2xl font-bold">עוד לא נקבע תאריך</h2>
-            <p className="mt-1 text-sm text-white/80">כשתקבעו תאריך תופיע כאן ספירה לאחור</p>
+            <h2 className="mt-1 text-2xl font-bold">{he.common.noDateYet}</h2>
+            <p className="mt-1 text-sm text-white/80">{he.hero.noDateHint}</p>
             <Link href={`/e/${event.id}/details`}>
               <Button variant="secondary" className="mt-5 border-0">
                 <CalendarPlus className="size-4" />
-                הזנת תאריך
+                {he.hero.setDate}
               </Button>
             </Link>
           </>
         ) : days > 0 ? (
           <p className="mt-1 flex items-baseline gap-3">
             <span className="num text-6xl font-bold tracking-tight sm:text-7xl">{formatNumber(days)}</span>
-            <span className="text-xl font-medium">{days === 1 ? "יום אחד לחתונה" : "ימים לחתונה"}</span>
+            <span className="text-xl font-medium">{days === 1 ? he.hero.oneDayLeft : he.hero.daysLeft}</span>
           </p>
         ) : (
-          <h2 className="mt-1 text-4xl font-bold">{days === 0 ? "היום מתחתנים! 💍" : "מזל טוב! 🎉"}</h2>
+          <h2 className="mt-1 text-4xl font-bold">{days === 0 ? he.hero.today : he.hero.past}</h2>
         )}
 
         {event.eventDate && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
@@ -83,7 +84,7 @@ export function ScrollRow({
 
       <button
         type="button"
-        aria-label="גלילה אחורה"
+        aria-label={he.ui.scrollBack}
         onClick={() => scroll("start")}
         className={cn(arrow, "start-0", !edges.start && "pointer-events-none opacity-0")}
       >
@@ -91,7 +92,7 @@ export function ScrollRow({
       </button>
       <button
         type="button"
-        aria-label="עוד קטגוריות"
+        aria-label={he.ui.scrollMore}
         onClick={() => scroll("end")}
         className={cn(arrow, "end-0", !edges.end && "pointer-events-none opacity-0")}
       >

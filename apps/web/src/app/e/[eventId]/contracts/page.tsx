@@ -31,14 +31,18 @@ function ContractCard({ contract, onOpen }: { contract: ContractDto; onOpen: () 
           <p className="font-semibold">{contract.vendorName}</p>
           <Badge tone={contractTone[contract.status]}>{he.contractStatus[contract.status]}</Badge>
         </div>
-        <p className="num mt-3 text-2xl font-bold">{formatILS(contract.totalAmountAgorot, "ללא סכום")}</p>
+        <p className="num mt-3 text-2xl font-bold">
+          {formatILS(contract.totalAmountAgorot, he.contractsPage.noAmount)}
+        </p>
         {contract.status === "approved" && contract.totalAmountAgorot != null && (
           <>
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-soft">
               <div className="h-full rounded-full bg-success" style={{ width: `${paidPct}%` }} />
             </div>
             <p className="mt-1.5 text-xs text-muted">
-              שולם <span className="num">{formatILS(contract.paidAgorot)}</span> · נותר{" "}
+              {he.contractsPage.paid}
+              <span className="num">{formatILS(contract.paidAgorot)}</span>
+              {he.contractsPage.left}
               <span className="num">{formatILS(contract.remainingAgorot)}</span>
             </p>
           </>
@@ -84,19 +88,19 @@ function NewCategoryDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title="קטגוריה חדשה"
+      title={he.contractsPage.newCategory}
       footer={
         <Button onClick={save} loading={saving}>
-          הוספה
+          {he.common.add}
         </Button>
       }
     >
-      <Field label="שם הקטגוריה" htmlFor="catName">
+      <Field label={he.contractsPage.categoryName} htmlFor="catName">
         <Input
           id="catName"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="למשל: צלם מגנטים"
+          placeholder={he.contractsPage.categoryPlaceholder}
           autoFocus
         />
       </Field>
@@ -135,7 +139,7 @@ function ContractsView() {
   const categoryName = (id: string) => categories.data.find((c) => c.id === id)?.nameHe ?? "";
 
   const tabs = [
-    { id: "all", nameHe: "הכל", count: contracts.data.length },
+    { id: "all", nameHe: he.contractsPage.all, count: contracts.data.length },
     ...visible.map((c) => ({ id: c.id, nameHe: c.nameHe, count: counts.get(c.id) ?? 0 })),
   ];
 
@@ -143,13 +147,13 @@ function ContractsView() {
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">חוזים</h1>
-          <p className="text-sm text-muted">כל ההצעות והחוזים מהספקים, לפי קטגוריה</p>
+          <h1 className="text-2xl font-bold">{he.contractsPage.title}</h1>
+          <p className="text-sm text-muted">{he.contractsPage.subtitle}</p>
         </div>
         {canWrite && (
           <Button onClick={() => setChooser(true)}>
             <FilePlus2 className="size-4" />
-            חוזה חדש
+            {he.contractsPage.newContract}
           </Button>
         )}
       </div>
@@ -186,7 +190,7 @@ function ContractsView() {
             className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-line px-3 py-1.5 text-sm text-muted hover:bg-soft"
           >
             <Plus className="size-3.5" />
-            קטגוריה
+            {he.contractsPage.category}
           </button>
         )}
       </ScrollRow>
@@ -194,13 +198,13 @@ function ContractsView() {
       {list.length === 0 ? (
         <EmptyState
           icon={<FileText className="size-6" />}
-          title={tab === "all" ? "עוד אין חוזים" : `עוד אין חוזים ב${categoryName(tab)}`}
-          description="הוסיפו הצעת מחיר או חוזה חתום כדי לעקוב אחרי תשלומים ותזכורות"
+          title={tab === "all" ? he.contractsPage.emptyAll : he.contractsPage.emptyIn(categoryName(tab))}
+          description={he.contractsPage.emptyText}
           action={
             canWrite && (
               <Button onClick={() => setChooser(true)}>
                 <FilePlus2 className="size-4" />
-                חוזה חדש
+                {he.contractsPage.newContract}
               </Button>
             )
           }
@@ -216,27 +220,25 @@ function ContractsView() {
         </div>
       )}
 
-      <Dialog open={chooser} onOpenChange={setChooser} title="איך מוסיפים את החוזה?">
+      <Dialog open={chooser} onOpenChange={setChooser} title={he.contractsPage.howToAdd}>
         <div className="grid gap-3">
           <button
             disabled
             className="flex items-start gap-4 rounded-2xl border border-line p-4 text-start opacity-60"
-            title="בקרוב"
+            title={he.contractsPage.comingSoon}
           >
             <div className="rounded-xl bg-brand-50 p-2.5 text-brand-500">
               <Upload className="size-5" />
             </div>
             <div>
               <p className="flex items-center gap-2 font-semibold">
-                העלאת קובץ{" "}
+                {he.contractsPage.upload}{" "}
                 <Badge tone="brand">
                   <Sparkles className="size-3" />
-                  בקרוב
+                  {he.contractsPage.comingSoon}
                 </Badge>
               </p>
-              <p className="mt-0.5 text-sm text-muted">
-                PDF או Word, וה-AI ימלא את הפרטים ואת פריסת התשלומים
-              </p>
+              <p className="mt-0.5 text-sm text-muted">{he.contractsPage.uploadHint}</p>
             </div>
           </button>
           <button
@@ -250,8 +252,8 @@ function ContractsView() {
               <PenLine className="size-5" />
             </div>
             <div>
-              <p className="font-semibold">הזנה ידנית</p>
-              <p className="mt-0.5 text-sm text-muted">ממלאים ספק, סכום ומועדי תשלום</p>
+              <p className="font-semibold">{he.contractsPage.manual}</p>
+              <p className="mt-0.5 text-sm text-muted">{he.contractsPage.manualHint}</p>
             </div>
           </button>
         </div>

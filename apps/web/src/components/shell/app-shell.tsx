@@ -3,7 +3,7 @@
 import { useEvent, useEvents, useMe } from "@sagarnu/api-client";
 import { ApiRequestError } from "@sagarnu/api-client";
 import { can } from "@sagarnu/domain";
-import { formatDate } from "@sagarnu/i18n";
+import { formatDate, he } from "@sagarnu/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarHeart,
@@ -66,13 +66,13 @@ function EventSwitcher({ eventId }: { eventId: string }) {
               <DropdownMenu.Item asChild className={menuItem}>
                 <Link href="/events">
                   <LayoutGrid className="size-4" />
-                  כל האירועים שלי
+                  {he.shell.allMyEvents}
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild className={cn(menuItem, "text-brand-600")}>
                 <Link href="/onboarding">
                   <Plus className="size-4" />
-                  אירוע חדש
+                  {he.shell.newEvent}
                 </Link>
               </DropdownMenu.Item>
             </>
@@ -93,7 +93,7 @@ export function UserMenu() {
       <DropdownMenu.Trigger asChild>
         <button
           className="flex size-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700"
-          aria-label="תפריט משתמש"
+          aria-label={he.shell.userMenu}
         >
           {initial}
         </button>
@@ -111,7 +111,7 @@ export function UserMenu() {
           <DropdownMenu.Separator className="my-1 h-px bg-line" />
           <DropdownMenu.Item className={menuItem} onSelect={() => router.push("/settings")}>
             <Settings className="size-4" />
-            הגדרות החשבון
+            {he.shell.settings}
           </DropdownMenu.Item>
           <DropdownMenu.Item
             className={menuItem}
@@ -122,7 +122,7 @@ export function UserMenu() {
             }}
           >
             <LogOut className="size-4" />
-            התנתקות
+            {he.shell.logout}
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -142,12 +142,17 @@ export function AppShell({ eventId, children }: { eventId: string; children: Rea
 
   const base = `/e/${eventId}`;
   const nav = [
-    { href: base, label: "דשבורד", icon: LayoutDashboard },
-    { href: `${base}/contracts`, label: "חוזים", icon: FileText },
-    { href: `${base}/expenses`, label: "הוצאות", icon: Wallet },
-    { href: `${base}/details`, label: "פרטי האירוע", short: "פרטים", icon: CalendarHeart },
+    { href: base, label: he.shell.nav.dashboard, icon: LayoutDashboard },
+    { href: `${base}/contracts`, label: he.shell.nav.contracts, icon: FileText },
+    { href: `${base}/expenses`, label: he.shell.nav.expenses, icon: Wallet },
+    {
+      href: `${base}/details`,
+      label: he.shell.nav.details,
+      short: he.shell.nav.detailsShort,
+      icon: CalendarHeart,
+    },
     ...(can(event.data?.role, "members.manage")
-      ? [{ href: `${base}/members`, label: "שיתוף", icon: Users }]
+      ? [{ href: `${base}/members`, label: he.shell.nav.members, icon: Users }]
       : []),
   ];
   const isActive = (href: string) => (href === base ? pathname === base : pathname.startsWith(href));
@@ -158,11 +163,11 @@ export function AppShell({ eventId, children }: { eventId: string; children: Rea
     const notFound = event.error instanceof ApiRequestError && event.error.status === 404;
     content = (
       <EmptyState
-        title={notFound ? "האירוע לא נמצא" : "לא הצלחנו לטעון את האירוע"}
-        description={notFound ? "ייתכן שהוא נמחק או שאין לך גישה אליו." : "בדקו את החיבור ונסו שוב."}
+        title={notFound ? he.shell.eventNotFound : he.shell.eventLoadFailed}
+        description={notFound ? he.shell.eventNotFoundHint : he.common.checkConnection}
         action={
           <Button variant="secondary" onClick={() => router.replace("/")}>
-            למסך הראשי
+            {he.common.toMain}
           </Button>
         }
       />

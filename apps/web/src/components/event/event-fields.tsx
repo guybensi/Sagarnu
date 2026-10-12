@@ -59,7 +59,7 @@ function Unknowable({
         className="text-muted"
         checked={isUnknown}
         onChange={(v) => toggleUnknown(name, v)}
-        label="לא ידוע עדיין"
+        label={he.eventFields.unknownYet}
       />
     </Field>
   );
@@ -103,7 +103,12 @@ export function WhenFields({ form, set, unknown, toggleUnknown }: FieldProps) {
   const derived = unknown.has("eventTime") ? null : timeOfDayFor(form.eventTime);
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <Unknowable name="eventDate" label="תאריך האירוע" unknown={unknown} toggleUnknown={toggleUnknown}>
+      <Unknowable
+        name="eventDate"
+        label={he.eventFields.eventDate}
+        unknown={unknown}
+        toggleUnknown={toggleUnknown}
+      >
         <Input
           id="eventDate"
           type="date"
@@ -111,7 +116,12 @@ export function WhenFields({ form, set, unknown, toggleUnknown }: FieldProps) {
           onChange={(e) => set("eventDate", text(e.target.value))}
         />
       </Unknowable>
-      <Unknowable name="eventTime" label="שעת התחלה" unknown={unknown} toggleUnknown={toggleUnknown}>
+      <Unknowable
+        name="eventTime"
+        label={he.eventFields.eventTime}
+        unknown={unknown}
+        toggleUnknown={toggleUnknown}
+      >
         <Input
           id="eventTime"
           type="time"
@@ -127,12 +137,15 @@ export function WhenFields({ form, set, unknown, toggleUnknown }: FieldProps) {
             <Moon className="size-4 text-brand-500" />
           )}
           <span>
-            <span className="font-medium text-ink">חתונת {he.timeOfDay[derived]}</span> · לפי שעת ההתחלה
+            <span className="font-medium text-ink">
+              {he.eventFields.derivedTimeOfDay(he.timeOfDay[derived])}
+            </span>
+            {he.eventFields.byStartTime}
           </span>
         </p>
       ) : (
         // Only asked while the start time is unknown.
-        <Field label="צהריים או ערב?" className="sm:col-span-2">
+        <Field label={he.eventFields.noonOrEvening} className="sm:col-span-2">
           <Chips
             options={TIMES_OF_DAY}
             labels={he.timeOfDay}
@@ -150,7 +163,7 @@ export function SizeFields({ form, set, unknown, toggleUnknown }: FieldProps) {
     <div className="grid gap-5 sm:grid-cols-2">
       <Unknowable
         name="guestCount"
-        label="מספר מוזמנים משוער"
+        label={he.eventFields.guestCount}
         unknown={unknown}
         toggleUnknown={toggleUnknown}
       >
@@ -168,7 +181,7 @@ export function SizeFields({ form, set, unknown, toggleUnknown }: FieldProps) {
       </Unknowable>
       <Unknowable
         name="estimatedBudgetAgorot"
-        label="תקציב משוער"
+        label={he.eventFields.budget}
         unknown={unknown}
         toggleUnknown={toggleUnknown}
       >
@@ -185,17 +198,22 @@ export function SizeFields({ form, set, unknown, toggleUnknown }: FieldProps) {
 export function PlaceFields({ form, set, unknown, toggleUnknown }: FieldProps) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <Unknowable name="city" label="עיר / אזור" unknown={unknown} toggleUnknown={toggleUnknown}>
+      <Unknowable name="city" label={he.eventFields.city} unknown={unknown} toggleUnknown={toggleUnknown}>
         <Input id="city" value={form.city ?? ""} onChange={(e) => set("city", text(e.target.value))} />
       </Unknowable>
-      <Unknowable name="venueName" label="שם האולם / המקום" unknown={unknown} toggleUnknown={toggleUnknown}>
+      <Unknowable
+        name="venueName"
+        label={he.eventFields.venueName}
+        unknown={unknown}
+        toggleUnknown={toggleUnknown}
+      >
         <Input
           id="venueName"
           value={form.venueName ?? ""}
           onChange={(e) => set("venueName", text(e.target.value))}
         />
       </Unknowable>
-      <Field label="כתובת" htmlFor="venueAddress" className="sm:col-span-2">
+      <Field label={he.eventFields.venueAddress} htmlFor="venueAddress" className="sm:col-span-2">
         <Input
           id="venueAddress"
           value={form.venueAddress ?? ""}
@@ -209,14 +227,14 @@ export function PlaceFields({ form, set, unknown, toggleUnknown }: FieldProps) {
 export function PeopleFields({ form, set }: FieldProps) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <Field label="שם בן/בת הזוג הראשון/ה" htmlFor="partner1Name">
+      <Field label={he.eventFields.partner1} htmlFor="partner1Name">
         <Input
           id="partner1Name"
           value={form.partner1Name ?? ""}
           onChange={(e) => set("partner1Name", text(e.target.value))}
         />
       </Field>
-      <Field label="שם בן/בת הזוג השני/ה" htmlFor="partner2Name">
+      <Field label={he.eventFields.partner2} htmlFor="partner2Name">
         <Input
           id="partner2Name"
           value={form.partner2Name ?? ""}
@@ -224,10 +242,10 @@ export function PeopleFields({ form, set }: FieldProps) {
         />
       </Field>
       <Field
-        label="שם האירוע"
+        label={he.eventFields.eventName}
         htmlFor="name"
         className="sm:col-span-2"
-        hint="כך האירוע יופיע באפליקציה ובתזכורות"
+        hint={he.eventFields.eventNameHint}
       >
         <Input
           id="name"
@@ -243,7 +261,7 @@ export function PeopleFields({ form, set }: FieldProps) {
 export function StyleFields({ form, set }: FieldProps) {
   return (
     <div className="flex flex-col gap-6">
-      <Field label="סגנון האירוע">
+      <Field label={he.eventFields.style}>
         <Chips
           options={EVENT_STYLES}
           labels={he.eventStyle}
@@ -251,7 +269,7 @@ export function StyleFields({ form, set }: FieldProps) {
           onChange={(v) => set("eventStyle", v)}
         />
       </Field>
-      <Field label="כשרות">
+      <Field label={he.eventFields.kashrut}>
         <Chips
           options={KASHRUT_LEVELS}
           labels={he.kashrut}
@@ -259,7 +277,7 @@ export function StyleFields({ form, set }: FieldProps) {
           onChange={(v) => set("kashrut", v)}
         />
       </Field>
-      <Field label="סוג הטקס">
+      <Field label={he.eventFields.ceremony}>
         <Chips
           options={CEREMONY_TYPES}
           labels={he.ceremonyType}
@@ -272,10 +290,7 @@ export function StyleFields({ form, set }: FieldProps) {
 }
 
 export function suggestName(form: Pick<EventForm, "partner1Name" | "partner2Name">): string {
-  const names = [form.partner1Name, form.partner2Name].filter(Boolean);
-  if (names.length === 2) return `החתונה של ${names[0]} ו${names[1]}`;
-  if (names.length === 1) return `החתונה של ${names[0]}`;
-  return "החתונה שלנו";
+  return he.eventFields.defaultName([form.partner1Name, form.partner2Name].filter((n): n is string => !!n));
 }
 
 /** Applies "not known yet" (→ null) and the default name before sending. */

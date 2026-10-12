@@ -33,4 +33,21 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // UI text lives in packages/i18n/src/he.ts so the future mobile app and other languages reuse it.
+    files: ["apps/web/src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/[\\u0590-\\u05FF]/], JSXText[value=/[\\u0590-\\u05FF]/]",
+          message: "Hebrew UI text belongs in packages/i18n/src/he.ts",
+        },
+        {
+          selector: "TemplateElement[value.raw=/[\\u0590-\\u05FF]/]",
+          message: "Hebrew UI text belongs in packages/i18n/src/he.ts",
+        },
+      ],
+    },
+  },
 );

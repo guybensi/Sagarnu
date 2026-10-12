@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { FileText, Paperclip, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,7 +16,7 @@ export interface PickedFile {
 export function FilePick({
   value,
   onChange,
-  label = "העלאת קובץ",
+  label = he.ui.uploadFile,
 }: {
   value: PickedFile | null;
   onChange: (file: PickedFile | null) => void;
@@ -30,7 +31,7 @@ export function FilePick({
     try {
       onChange(await prepareReceipt(file));
     } catch (e) {
-      toast.error(fileErrorMessage(e) ?? "לא הצלחנו לקרוא את הקובץ");
+      toast.error(fileErrorMessage(e) ?? he.ui.fileUnreadable);
     } finally {
       setBusy(false);
       if (input.current) input.current.value = "";
@@ -52,7 +53,7 @@ export function FilePick({
           <span className="truncate">{value.name}</span>
           <button
             type="button"
-            aria-label={`הסרת ${value.name}`}
+            aria-label={he.common.remove(value.name)}
             onClick={() => onChange(null)}
             className="rounded p-0.5 hover:bg-brand-100"
           >

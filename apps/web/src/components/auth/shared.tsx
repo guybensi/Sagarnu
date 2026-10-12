@@ -7,21 +7,7 @@ import { Button } from "@/components/ui/button";
 import { authClient, googleEnabled } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 
-const AUTH_ERRORS: Record<string, string> = {
-  // Same answer for an unknown email and a wrong password, so the form never reveals who is registered.
-  INVALID_EMAIL_OR_PASSWORD: "לא מצאנו חשבון עם האימייל והסיסמה האלה",
-  USER_ALREADY_EXISTS: "כבר יש חשבון עם האימייל הזה",
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "כבר יש חשבון עם האימייל הזה",
-  EMAIL_NOT_VERIFIED: "צריך לאמת את כתובת האימייל. שלחנו לך קישור",
-  PASSWORD_POLICY: "הסיסמה לא עומדת בדרישות",
-  PASSWORD_TOO_SHORT: "הסיסמה לא עומדת בדרישות",
-  INVALID_EMAIL: "כתובת האימייל לא תקינה",
-  INVALID_TOKEN: "הקישור לא תקין או שפג תוקפו",
-  INVALID_PASSWORD: "הסיסמה הנוכחית לא נכונה",
-  INVALID_ORIGIN: "שגיאת הגדרה בשרת: כתובת האתר (WEB_ORIGIN) לא תואמת",
-  TOO_MANY_REQUESTS: "יותר מדי ניסיונות. נסו שוב בעוד דקה",
-  SERVER_DOWN: "השרת לא זמין כרגע. נסו שוב בעוד רגע",
-};
+const AUTH_ERRORS = he.auth.errors;
 
 export type AuthError = { code?: string; status?: number } | null | undefined;
 
@@ -31,7 +17,7 @@ export function authErrorMessage(error: AuthError): string {
   if (error.code && AUTH_ERRORS[error.code]) return AUTH_ERRORS[error.code]!;
   // No status (network) or 5xx: the API is down or unreachable, not a problem with what the user typed.
   if (!error.status || error.status >= 500) return AUTH_ERRORS.SERVER_DOWN!;
-  return "משהו השתבש. נסו שוב";
+  return he.errors.internal;
 }
 
 /** Shown under the login error: the account may simply not exist yet. */
@@ -101,11 +87,11 @@ export function GoogleButton() {
             d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"
           />
         </svg>
-        המשך עם Google
+        {he.auth.continueWithGoogle}
       </Button>
       <div className="flex items-center gap-3 text-xs text-muted">
         <span className="h-px flex-1 bg-line" />
-        או
+        {he.auth.or}
         <span className="h-px flex-1 bg-line" />
       </div>
     </>

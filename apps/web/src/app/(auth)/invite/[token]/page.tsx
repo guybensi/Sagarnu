@@ -2,7 +2,6 @@
 
 import { ApiRequestError, endpoints, keys } from "@sagarnu/api-client";
 import { formatDate, he } from "@sagarnu/i18n";
-import type { InvitationInfoDto } from "@sagarnu/schemas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarHeart, LinkIcon, UserPlus } from "lucide-react";
 import Link from "next/link";
@@ -14,12 +13,6 @@ import { Spinner } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { toastError } from "@/lib/errors";
 import { withNext } from "@/lib/next-path";
-
-const STATUS_TEXT: Record<Exclude<InvitationInfoDto["status"], "valid">, [string, string]> = {
-  expired: ["פג תוקף ההזמנה", "הקישור היה בתוקף 7 ימים. אפשר לבקש ממי שהזמין/ה אותך לשלוח הזמנה חדשה."],
-  accepted: ["ההזמנה כבר נוצלה", "כל קישור הזמנה עובד פעם אחת. אם זה היה את/ה, האירוע כבר מחכה לך."],
-  revoked: ["ההזמנה בוטלה", "אפשר לבקש ממי שהזמין/ה אותך לשלוח הזמנה חדשה."],
-};
 
 function Message({ title, text, action }: { title: string; text: string; action?: React.ReactNode }) {
   return (
@@ -52,11 +45,11 @@ export default function InvitePage() {
     const notFound = info.error instanceof ApiRequestError && info.error.status === 404;
     return (
       <Message
-        title={notFound ? "הקישור לא תקין" : "לא הצלחנו לטעון את ההזמנה"}
-        text={notFound ? "ייתכן שהקישור הועתק חלקית. כדאי לבקש אותו שוב." : "בדקו את החיבור ונסו שוב."}
+        title={notFound ? he.invite.invalidLink : he.invite.loadFailed}
+        text={notFound ? he.invite.invalidLinkHint : he.common.checkConnection}
         action={
           <Link href="/" className="text-sm font-medium text-brand-600 hover:underline">
-            לדף הבית
+            {he.common.home}
           </Link>
         }
       />
@@ -65,14 +58,14 @@ export default function InvitePage() {
 
   const invite = info.data;
   if (invite.status !== "valid") {
-    const [title, text] = STATUS_TEXT[invite.status];
+    const { title, text } = he.invite.status[invite.status];
     return (
       <Message
         title={title}
         text={text}
         action={
           <Link href="/" className="text-sm font-medium text-brand-600 hover:underline">
-            לדף הבית
+            {he.common.home}
           </Link>
         }
       />
@@ -88,7 +81,7 @@ export default function InvitePage() {
         qc.invalidateQueries({ queryKey: keys.events }),
         qc.invalidateQueries({ queryKey: keys.me }),
       ]);
-      toast.success(`הצטרפת ל"${invite.eventName}"`);
+      toast.success(he.invite.joined(invite.eventName));
       router.replace(`/e/${res.eventId}`);
     } catch (e) {
       toastError(e);
@@ -103,7 +96,7 @@ export default function InvitePage() {
         <UserPlus className="size-7" />
       </div>
       <div>
-        <p className="text-sm text-muted">{invite.inviterName} הזמין/ה אותך להצטרף ל־</p>
+        <p className="text-sm text-muted">{he.invite.invitedYou(invite.inviterName)}</p>
         <h1 className="mt-1 text-2xl font-bold">{invite.eventName}</h1>
         {invite.eventDate && (
           <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted">
@@ -112,18 +105,20 @@ export default function InvitePage() {
           </p>
         )}
         <p className="mt-3 text-sm">
-          הרשאה: <span className="font-medium">{he.role[invite.role]}</span>
-          {invite.role === "editor" ? " (צפייה ועריכה של חוזים ותשלומים)" : " (צפייה בלבד)"}
+          {he.invite.roleLabel}
+          <span className="font-medium">{he.role[invite.role]}</span>
+          {invite.role === "editor" ? he.invite.editorHint : he.invite.viewerHint}
         </p>
       </div>
 
       {session.data ? (
         <div className="flex w-full flex-col gap-3">
           <Button size="lg" onClick={join} loading={joining}>
-            הצטרפות לאירוע
+            {he.invite.join}
           </Button>
           <p className="text-xs text-muted">
-            מחובר/ת בתור <span className="num">{session.data.user.email}</span> ·{" "}
+            {he.invite.signedInAs}
+            <span className="num">{session.data.user.email}</span> ·{" "}
             <button
               type="button"
               className="underline hover:text-ink"
@@ -133,7 +128,7 @@ export default function InvitePage() {
                 router.replace(withNext("/login", here));
               }}
             >
-              לא את/ה?
+              {he.invite.notYou}
             </button>
           </p>
         </div>
@@ -141,12 +136,12 @@ export default function InvitePage() {
         <div className="flex w-full flex-col gap-3">
           <Link href={withNext("/signup", here)}>
             <Button size="lg" className="w-full">
-              הרשמה והצטרפות
+              {he.invite.signupAndJoin}
             </Button>
           </Link>
           <Link href={withNext("/login", here)}>
             <Button size="lg" variant="secondary" className="w-full">
-              כבר יש לי חשבון
+              {he.invite.haveAccount}
             </Button>
           </Link>
         </div>

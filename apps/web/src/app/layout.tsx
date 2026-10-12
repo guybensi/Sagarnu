@@ -1,3 +1,4 @@
+import { he } from "@sagarnu/i18n";
 import type { Metadata, Viewport } from "next";
 import { Heebo } from "next/font/google";
 import type { ReactNode } from "react";
@@ -7,8 +8,8 @@ import "./globals.css";
 const heebo = Heebo({ subsets: ["hebrew", "latin"], variable: "--font-heebo", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "סגרנו – ניהול תקציב החתונה", template: "%s · סגרנו" },
-  description: "ניהול תקציב החתונה: חוזי ספקים, תשלומים ותזכורות במקום אחד.",
+  title: { default: he.app.title, template: he.app.titleTemplate },
+  description: he.app.description,
 };
 
 export const viewport: Viewport = { themeColor: "#faf7f4", width: "device-width", initialScale: 1 };

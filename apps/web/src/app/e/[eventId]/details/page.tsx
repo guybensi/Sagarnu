@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { endpoints, keys, useCategories, useEvent } from "@sagarnu/api-client";
 import { updateEventSchema, type EventDto } from "@sagarnu/schemas";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,10 +42,8 @@ function CategoriesCard({ eventId, editable }: { eventId: string; editable: bool
   if (!categories.data) return null;
   return (
     <Card>
-      <CardTitle>קטגוריות רלוונטיות</CardTitle>
-      <p className="-mt-2 mb-4 text-sm text-muted">
-        קטגוריה שלא רלוונטית לכם לא תופיע בדשבורד בתור &quot;עוד אין ספק&quot;
-      </p>
+      <CardTitle>{he.details.categories}</CardTitle>
+      <p className="-mt-2 mb-4 text-sm text-muted">{he.details.categoriesHint}</p>
       <div className="flex flex-wrap gap-2">
         {categories.data.map((c) => (
           <button
@@ -111,12 +110,12 @@ export default function DetailsPage() {
       ...toEventPayload(form, unknown),
       completeQuestionnaire: true,
     });
-    if (!parsed.success) return toast.error("יש שדה לא תקין");
+    if (!parsed.success) return toast.error(he.details.invalidField);
     setSaving(true);
     try {
       await endpoints.events.update(eventId, parsed.data);
       await Promise.all([refresh(), qc.invalidateQueries({ queryKey: keys.events })]);
-      toast.success("הפרטים נשמרו");
+      toast.success(he.details.saved);
     } catch (e) {
       toastError(e);
     } finally {
@@ -135,23 +134,23 @@ export default function DetailsPage() {
   };
 
   const sections = [
-    { title: "מתי", body: <WhenFields {...props} /> },
-    { title: "כמה", body: <SizeFields {...props} /> },
-    { title: "איפה", body: <PlaceFields {...props} /> },
-    { title: "מי", body: <PeopleFields {...props} /> },
-    { title: "סגנון", body: <StyleFields {...props} /> },
+    { title: he.details.sections.when, body: <WhenFields {...props} /> },
+    { title: he.details.sections.size, body: <SizeFields {...props} /> },
+    { title: he.details.sections.place, body: <PlaceFields {...props} /> },
+    { title: he.details.sections.people, body: <PeopleFields {...props} /> },
+    { title: he.details.sections.style, body: <StyleFields {...props} /> },
   ];
 
   return (
     <div className="mx-auto grid max-w-3xl gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">פרטי האירוע</h1>
-          <p className="text-sm text-muted">שינוי תאריך האירוע מעדכן אוטומטית מועדי תשלום יחסיים</p>
+          <h1 className="text-2xl font-bold">{he.details.title}</h1>
+          <p className="text-sm text-muted">{he.details.subtitle}</p>
         </div>
         {editable && (
           <Button onClick={save} loading={saving}>
-            שמירת שינויים
+            {he.details.save}
           </Button>
         )}
       </div>
@@ -164,8 +163,8 @@ export default function DetailsPage() {
           </Card>
         ))}
         <Card>
-          <CardTitle>הערות</CardTitle>
-          <Field label="הערות כלליות" htmlFor="eventNotes">
+          <CardTitle>{he.details.notes}</CardTitle>
+          <Field label={he.details.generalNotes} htmlFor="eventNotes">
             <Textarea
               id="eventNotes"
               value={form.notes ?? ""}
@@ -180,17 +179,17 @@ export default function DetailsPage() {
       {editable && (
         <div className="flex justify-end">
           <Button onClick={save} loading={saving} size="lg">
-            שמירת שינויים
+            {he.details.save}
           </Button>
         </div>
       )}
 
       {canDelete && (
         <Card className="border border-danger/20">
-          <CardTitle>מחיקת האירוע</CardTitle>
-          <p className="mb-4 text-sm text-muted">האירוע, החוזים והתשלומים יוסתרו מכל החברים באירוע.</p>
+          <CardTitle>{he.details.deleteEvent}</CardTitle>
+          <p className="mb-4 text-sm text-muted">{he.details.deleteHint}</p>
           <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-            מחיקת האירוע
+            {he.details.deleteEvent}
           </Button>
         </Card>
       )}
@@ -199,9 +198,9 @@ export default function DetailsPage() {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         danger
-        title="למחוק את האירוע?"
-        description={`"${event.data.name}" וכל הנתונים שלו יימחקו.`}
-        confirmLabel="כן, למחוק"
+        title={he.details.deleteTitle}
+        description={he.details.deleteText(event.data.name)}
+        confirmLabel={he.details.deleteConfirm}
         onConfirm={remove}
       />
     </div>

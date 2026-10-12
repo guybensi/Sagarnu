@@ -1,3 +1,4 @@
+import { he } from "@sagarnu/i18n";
 import { cn } from "@/lib/cn";
 
 export function Logo({ className }: { className?: string }) {
@@ -7,7 +8,7 @@ export function Logo({ className }: { className?: string }) {
         <circle cx="12" cy="16" r="8" fill="none" stroke="var(--color-brand-500)" strokeWidth="2.5" />
         <circle cx="20" cy="16" r="8" fill="none" stroke="var(--color-gold)" strokeWidth="2.5" />
       </svg>
-      <span className="text-xl tracking-tight">סגרנו</span>
+      <span className="text-xl tracking-tight">{he.app.name}</span>
     </span>
   );
 }

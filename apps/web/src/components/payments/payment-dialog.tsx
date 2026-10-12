@@ -116,8 +116,8 @@ export function PaymentDialog({
       });
       const failed = (await Promise.allSettled(uploads)).filter((r) => r.status === "rejected").length;
       await refresh();
-      if (failed) toast.warning("התשלום נשמר, אבל קובץ לא הועלה. אפשר לצרף אותו מהיסטוריית התשלומים");
-      else toast.success("התשלום נשמר");
+      if (failed) toast.warning(he.payments.savedFileFailed);
+      else toast.success(he.payments.saved);
       onOpenChange(false);
       if ((res.remainingAgorot ?? 0) > 0) setResult(res);
     } catch (e) {
@@ -133,31 +133,31 @@ export function PaymentDialog({
       <Dialog
         open={open}
         onOpenChange={onOpenChange}
-        title="הוספת תשלום"
+        title={he.payments.add}
         description={contract.data?.vendorName}
         footer={
           <>
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              ביטול
+              {he.common.cancel}
             </Button>
             <Button onClick={() => submit()} loading={saving} disabled={!form}>
-              שמירת תשלום
+              {he.payments.submit}
             </Button>
           </>
         }
       >
         {!form ? (
-          <div className="py-10 text-center text-sm text-muted">טוען…</div>
+          <div className="py-10 text-center text-sm text-muted">{he.payments.loading}</div>
         ) : (
           <div className="grid gap-4">
             {contract.data && contract.data.totalAmountAgorot != null && (
               <div className="flex justify-between rounded-xl bg-soft px-4 py-3 text-sm">
-                <span className="text-muted">נותר לתשלום</span>
+                <span className="text-muted">{he.payments.remaining}</span>
                 <span className="num font-semibold">{formatILS(contract.data.remainingAgorot)}</span>
               </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="סכום" htmlFor="amount" error={errors.amountAgorot}>
+              <Field label={he.payments.amount} htmlFor="amount" error={errors.amountAgorot}>
                 <MoneyInput
                   id="amount"
                   value={form.amountAgorot}
@@ -165,7 +165,7 @@ export function PaymentDialog({
                   invalid={!!errors.amountAgorot}
                 />
               </Field>
-              <Field label="תאריך התשלום" htmlFor="paidOn" error={errors.paidOn}>
+              <Field label={he.payments.paidOn} htmlFor="paidOn" error={errors.paidOn}>
                 <Input
                   id="paidOn"
                   type="date"
@@ -175,7 +175,7 @@ export function PaymentDialog({
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="אופן תשלום" htmlFor="method">
+              <Field label={he.payments.method} htmlFor="method">
                 <Select
                   id="method"
                   value={form.method}
@@ -188,7 +188,7 @@ export function PaymentDialog({
                   ))}
                 </Select>
               </Field>
-              <Field label="על חשבון מועד" htmlFor="item">
+              <Field label={he.payments.forInstallment} htmlFor="item">
                 <Select
                   id="item"
                   value={form.scheduleItemId ?? ""}
@@ -198,7 +198,7 @@ export function PaymentDialog({
                     if (item?.remainingAgorot) set("amountAgorot", item.remainingAgorot);
                   }}
                 >
-                  <option value="">ללא שיוך</option>
+                  <option value="">{he.payments.noInstallment}</option>
                   {openItems.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.label}
@@ -210,10 +210,10 @@ export function PaymentDialog({
               </Field>
             </div>
             <Field
-              label="קבלה"
+              label={he.paymentFileKind.receipt}
               htmlFor="receiptUrl"
-              error={errors.receiptUrl && "קישור לא תקין (https://…)"}
-              hint="קישור (למשל לדרייב) או קובץ PDF / תמונה"
+              error={errors.receiptUrl && he.payments.invalidLink}
+              hint={he.payments.receiptHint}
             >
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
                 <Input
@@ -227,9 +227,9 @@ export function PaymentDialog({
               </div>
             </Field>
             <Field
-              label="אישור העברה"
+              label={he.paymentFileKind.confirmation}
               htmlFor="confirmationUrl"
-              error={errors.confirmationUrl && "קישור לא תקין (https://…)"}
+              error={errors.confirmationUrl && he.payments.invalidLink}
             >
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
                 <Input
@@ -245,7 +245,7 @@ export function PaymentDialog({
                 />
               </div>
             </Field>
-            <Field label="הערות" htmlFor="notes">
+            <Field label={he.payments.notes} htmlFor="notes">
               <Textarea
                 id="notes"
                 className="min-h-16"
@@ -260,14 +260,15 @@ export function PaymentDialog({
       <ConfirmDialog
         open={overpay != null}
         onOpenChange={(o) => !o && setOverpay(null)}
-        title="התשלום עובר את סכום החוזה"
+        title={he.payments.overpayTitle}
         description={
           <>
-            אחרי התשלום הזה ישולם לספק <span className="num font-semibold">{formatILS(overpay)}</span> יותר
-            מהסכום בחוזה. זה בסדר אם מדובר בתוספות או בטיפ.
+            {he.payments.overpayBefore}
+            <span className="num font-semibold">{formatILS(overpay)}</span>
+            {he.payments.overpayAfter}
           </>
         }
-        confirmLabel="כן, לשמור"
+        confirmLabel={he.payments.overpayConfirm}
         loading={saving}
         onConfirm={() => submit(true)}
       />

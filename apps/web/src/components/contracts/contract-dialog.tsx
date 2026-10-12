@@ -140,7 +140,7 @@ function initialState(contract: ContractDetailDto | null, categoryId: string): F
     excludedText: contract?.excludedItems.join("\n") ?? "",
     cancellationPolicy: contract?.cancellationPolicy ?? "",
     notes: contract?.notes ?? "",
-    schedule: contract ? contract.schedule.map(rowFromItem) : [newRow("מקדמה")],
+    schedule: contract ? contract.schedule.map(rowFromItem) : [newRow(he.contract.firstInstallment)],
   };
 }
 
@@ -163,7 +163,7 @@ const isEmptyRow = (r: ScheduleRow) =>
 function toScheduleInput(row: ScheduleRow): ScheduleItemInput {
   const relative = row.timing !== "date";
   return {
-    label: row.label.trim() || "תשלום",
+    label: row.label.trim() || he.contract.installment,
     amountAgorot: row.mode === "amount" ? row.amountAgorot : null,
     percent: row.mode === "percent" ? row.percent : null,
     dueDate: relative ? null : orNull(row.dueDate),
@@ -188,7 +188,7 @@ function ComputedDueDate({
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted">
         <CalendarClock className="size-3.5 shrink-0" />
-        {bySigning ? "התאריך יחושב לבד אחרי שימולא תאריך החתימה" : "התאריך יחושב לבד כשייקבע תאריך האירוע"}
+        {bySigning ? he.contract.computedAfterSigning : he.contract.computedAfterEventDate}
       </p>
     );
   }
@@ -207,8 +207,9 @@ function ComputedDueDate({
     >
       <CalendarClock className="size-3.5 shrink-0" />
       <span>
-        יוצא ב־<span className="num font-medium text-ink">{formatDate(due)}</span>
-        {past ? " (התאריך כבר עבר)" : bySigning ? "" : ", ויתעדכן לבד אם תאריך האירוע ישתנה"}
+        {he.contract.fallsOn}
+        <span className="num font-medium text-ink">{formatDate(due)}</span>
+        {past ? he.contract.alreadyPast : bySigning ? "" : he.contract.followsEventDate}
       </span>
     </p>
   );
@@ -225,33 +226,33 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 /** Field → [Hebrew name, id of the input to focus]. */
 const FIELD_INFO: Record<string, [string, string]> = {
-  vendorName: ["שם הספק", "vendorName"],
-  categoryId: ["קטגוריה", "categoryId"],
-  vendorContactName: ["איש קשר", "vendorContactName"],
-  vendorPhone: ["טלפון", "vendorPhone"],
-  vendorEmail: ["אימייל הספק", "vendorEmail"],
-  vendorBusinessId: ["ח.פ / ע.מ", "vendorBusinessId"],
-  websiteUrl: ["אתר", "websiteUrl"],
-  instagramUrl: ["אינסטגרם", "instagramUrl"],
-  facebookUrl: ["פייסבוק", "facebookUrl"],
-  contractUrl: ["קישור לחוזה", "contractUrl"],
-  totalAmountAgorot: ["סכום כולל", "total"],
-  perGuestPriceAgorot: ["מחיר למנה", "perGuest"],
-  minGuests: ["מינימום מנות", "minGuests"],
-  vatMode: ["מע״מ", "vat"],
-  signedOn: ["תאריך חתימה", "signedOn"],
-  includedItems: ["מה כלול", "included"],
-  excludedItems: ["מה לא כלול", "excluded"],
-  cancellationPolicy: ["מדיניות ביטול", "cancellation"],
-  notes: ["הערות", "contractNotes"],
+  vendorName: [he.contract.fields.vendorName, "vendorName"],
+  categoryId: [he.contract.fields.categoryId, "categoryId"],
+  vendorContactName: [he.contract.fields.vendorContactName, "vendorContactName"],
+  vendorPhone: [he.contract.fields.vendorPhone, "vendorPhone"],
+  vendorEmail: [he.contract.fields.vendorEmailIssue, "vendorEmail"],
+  vendorBusinessId: [he.contract.fields.vendorBusinessId, "vendorBusinessId"],
+  websiteUrl: [he.contract.fields.websiteUrl, "websiteUrl"],
+  instagramUrl: [he.contract.fields.instagramUrl, "instagramUrl"],
+  facebookUrl: [he.contract.fields.facebookUrl, "facebookUrl"],
+  contractUrl: [he.contract.fields.contractUrlIssue, "contractUrl"],
+  totalAmountAgorot: [he.contract.fields.totalAmountAgorot, "total"],
+  perGuestPriceAgorot: [he.contract.fields.perGuestPriceAgorot, "perGuest"],
+  minGuests: [he.contract.fields.minGuests, "minGuests"],
+  vatMode: [he.contract.fields.vatMode, "vat"],
+  signedOn: [he.contract.fields.signedOn, "signedOn"],
+  includedItems: [he.contract.fields.includedItems, "included"],
+  excludedItems: [he.contract.fields.excludedItems, "excluded"],
+  cancellationPolicy: [he.contract.fields.cancellationPolicy, "cancellation"],
+  notes: [he.contract.fields.notes, "contractNotes"],
 };
 
 const SCHEDULE_FIELD: Record<string, [string, string]> = {
-  label: ["שם", "label"],
-  amountAgorot: ["סכום", "amount"],
-  percent: ["אחוז", "percent"],
-  dueDate: ["תאריך", "date"],
-  relativeDays: ["מספר ימים", "days"],
+  label: [he.contract.scheduleFields.label, "label"],
+  amountAgorot: [he.contract.scheduleFields.amountAgorot, "amount"],
+  percent: [he.contract.scheduleFields.percent, "percent"],
+  dueDate: [he.contract.scheduleFields.dueDate, "date"],
+  relativeDays: [he.contract.scheduleFields.relativeDays, "days"],
 };
 
 interface FormIssue {
@@ -271,11 +272,11 @@ function describeIssues(paths: string[], rowKeys: number[], allRowKeys: number[]
     if (head === "schedule" && index !== undefined) {
       const rowKey = rowKeys[Number(index)] ?? -1;
       const position = allRowKeys.indexOf(rowKey) + 1 || Number(index) + 1;
-      const [fieldName, suffix] = SCHEDULE_FIELD[field ?? ""] ?? ["פרטים", "label"];
+      const [fieldName, suffix] = SCHEDULE_FIELD[field ?? ""] ?? [he.contract.otherDetails, "label"];
       const key = `schedule.${rowKey}.${suffix}`;
       out.set(key, {
         key,
-        label: `מועד תשלום ${position}: ${fieldName}`,
+        label: he.contract.scheduleIssue(position, fieldName),
         targetId: `schedule-${rowKey}-${suffix}`,
       });
     } else {
@@ -392,10 +393,10 @@ export function ContractDialog({
     const updated = await endpoints.contracts.setStatus(eventId, c.id, status, confirm);
     const cancelled = updated.schedule.filter((s) => s.status === "cancelled");
     if (status === "approved" && cancelled.length > 0) {
-      toast("החוזה אושר מחדש", {
-        description: `יש ${cancelled.length} מועדי תשלום שבוטלו. לשחזר אותם?`,
+      toast(he.contract.reapproved, {
+        description: he.contract.restoreCancelled(cancelled.length),
         action: {
-          label: "שחזור",
+          label: he.contract.restore,
           onClick: async () => {
             await Promise.all(
               cancelled.map((s) => endpoints.schedule.update(eventId, s.id, { status: "pending" })),
@@ -443,7 +444,7 @@ export function ContractDialog({
         const saved = await endpoints.contracts.create(eventId, parsed.data);
         setIssues([]);
         await refresh();
-        toast.success("החוזה נשמר");
+        toast.success(he.contract.created);
         onOpenChange(false);
         onSaved?.(saved);
         return;
@@ -489,11 +490,11 @@ export function ContractDialog({
           return;
         }
       }
-      await finish("החוזה עודכן");
+      await finish(he.contract.updated);
     } catch (e) {
       if (e instanceof ApiRequestError && e.code === "version_conflict") {
         await refresh();
-        toast.error("מישהו אחר עדכן את החוזה בינתיים. הפרטים רועננו, אפשר לערוך שוב");
+        toast.error(he.contract.versionConflict);
         reset("view");
         return;
       }
@@ -518,7 +519,7 @@ export function ContractDialog({
     try {
       await applyStatus(contract, statusConfirm.status, true);
       setStatusConfirm(null);
-      await finish("החוזה עודכן");
+      await finish(he.contract.updated);
     } catch (e) {
       toastError(e);
     } finally {
@@ -528,14 +529,14 @@ export function ContractDialog({
 
   const keepStatus = async () => {
     setStatusConfirm(null);
-    await finish("הפרטים נשמרו, הסטטוס לא שונה");
+    await finish(he.contract.savedStatusKept);
   };
 
-  const urlError = (key: string) => errors[key] && "קישור לא תקין (https://…)";
+  const urlError = (key: string) => errors[key] && he.payments.invalidLink;
   const title = !contract
-    ? "חוזה חדש"
+    ? he.contract.newTitle
     : editing
-      ? `עריכת חוזה · ${contract.vendorName}`
+      ? he.contract.editTitle(contract.vendorName)
       : contract.vendorName;
 
   const footer = editing ? (
@@ -547,9 +548,7 @@ export function ContractDialog({
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <div>
-            <p className="font-medium">
-              {issues.length === 1 ? "צריך לתקן שדה אחד:" : `צריך לתקן ${issues.length} שדות:`}
-            </p>
+            <p className="font-medium">{he.contract.issues(issues.length)}</p>
             <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
               {issues.map((issue) => (
                 <li key={issue.key}>
@@ -567,10 +566,10 @@ export function ContractDialog({
         </div>
       )}
       <Button variant="secondary" onClick={() => (contract ? reset("view") : onOpenChange(false))}>
-        ביטול
+        {he.common.cancel}
       </Button>
       <Button onClick={save} loading={saving}>
-        שמירה
+        {he.common.save}
       </Button>
     </>
   ) : (
@@ -578,16 +577,16 @@ export function ContractDialog({
       {onOpenPayments && (
         <Button variant="ghost" className="sm:me-auto" onClick={onOpenPayments}>
           <CalendarClock className="size-4" />
-          תשלומים ומועדים
+          {he.contract.paymentsAndDates}
         </Button>
       )}
       <Button variant="secondary" onClick={() => onOpenChange(false)}>
-        סגירה
+        {he.common.close}
       </Button>
       {canWrite && (
         <Button onClick={() => setMode("edit")}>
           <Pencil className="size-4" />
-          עריכה
+          {he.common.edit}
         </Button>
       )}
     </>
@@ -608,16 +607,16 @@ export function ContractDialog({
           !editing && contract ? (
             <span className="inline-flex items-center gap-1.5">
               <Lock className="size-3.5" />
-              צפייה בלבד · ללחוץ על &quot;עריכה&quot; כדי לשנות
+              {he.contract.viewOnly}
             </span>
           ) : undefined
         }
         footer={footer}
       >
         <fieldset disabled={!editing} className="grid gap-8">
-          <Section title="הספק">
+          <Section title={he.contract.sections.vendor}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="שם הספק" htmlFor="vendorName" error={errors.vendorName}>
+              <Field label={he.contract.fields.vendorName} htmlFor="vendorName" error={errors.vendorName}>
                 <Input
                   id="vendorName"
                   value={form.vendorName}
@@ -625,14 +624,14 @@ export function ContractDialog({
                   aria-invalid={!!errors.vendorName}
                 />
               </Field>
-              <Field label="קטגוריה" htmlFor="categoryId" error={errors.categoryId}>
+              <Field label={he.contract.fields.categoryId} htmlFor="categoryId" error={errors.categoryId}>
                 <Select
                   id="categoryId"
                   value={form.categoryId}
                   onChange={(e) => set("categoryId", e.target.value)}
                 >
                   <option value="" disabled>
-                    בחירה…
+                    {he.contract.choose}
                   </option>
                   {categories.data?.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -642,7 +641,7 @@ export function ContractDialog({
                 </Select>
               </Field>
             </div>
-            <Field label="סטטוס">
+            <Field label={he.contract.fields.status}>
               <Chips
                 options={CONTRACT_STATUSES}
                 labels={he.contractStatus}
@@ -651,14 +650,14 @@ export function ContractDialog({
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="איש קשר" htmlFor="vendorContactName">
+              <Field label={he.contract.fields.vendorContactName} htmlFor="vendorContactName">
                 <Input
                   id="vendorContactName"
                   value={form.vendorContactName}
                   onChange={(e) => set("vendorContactName", e.target.value)}
                 />
               </Field>
-              <Field label="ח.פ / ע.מ" htmlFor="vendorBusinessId">
+              <Field label={he.contract.fields.vendorBusinessId} htmlFor="vendorBusinessId">
                 <Input
                   id="vendorBusinessId"
                   dir="ltr"
@@ -667,7 +666,7 @@ export function ContractDialog({
                   onChange={(e) => set("vendorBusinessId", e.target.value)}
                 />
               </Field>
-              <Field label="טלפון" htmlFor="vendorPhone">
+              <Field label={he.contract.fields.vendorPhone} htmlFor="vendorPhone">
                 <Input
                   id="vendorPhone"
                   dir="ltr"
@@ -676,7 +675,11 @@ export function ContractDialog({
                   onChange={(e) => set("vendorPhone", e.target.value)}
                 />
               </Field>
-              <Field label="אימייל" htmlFor="vendorEmail" error={errors.vendorEmail && "אימייל לא תקין"}>
+              <Field
+                label={he.contract.fields.vendorEmail}
+                htmlFor="vendorEmail"
+                error={errors.vendorEmail && he.auth.invalidEmail}
+              >
                 <Input
                   id="vendorEmail"
                   dir="ltr"
@@ -687,7 +690,11 @@ export function ContractDialog({
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="אתר" htmlFor="websiteUrl" error={urlError("websiteUrl")}>
+              <Field
+                label={he.contract.fields.websiteUrl}
+                htmlFor="websiteUrl"
+                error={urlError("websiteUrl")}
+              >
                 <Input
                   id="websiteUrl"
                   dir="ltr"
@@ -696,7 +703,11 @@ export function ContractDialog({
                   onChange={(e) => set("websiteUrl", e.target.value)}
                 />
               </Field>
-              <Field label="אינסטגרם" htmlFor="instagramUrl" error={urlError("instagramUrl")}>
+              <Field
+                label={he.contract.fields.instagramUrl}
+                htmlFor="instagramUrl"
+                error={urlError("instagramUrl")}
+              >
                 <Input
                   id="instagramUrl"
                   dir="ltr"
@@ -705,7 +716,11 @@ export function ContractDialog({
                   onChange={(e) => set("instagramUrl", e.target.value)}
                 />
               </Field>
-              <Field label="פייסבוק" htmlFor="facebookUrl" error={urlError("facebookUrl")}>
+              <Field
+                label={he.contract.fields.facebookUrl}
+                htmlFor="facebookUrl"
+                error={urlError("facebookUrl")}
+              >
                 <Input
                   id="facebookUrl"
                   dir="ltr"
@@ -714,7 +729,11 @@ export function ContractDialog({
                   onChange={(e) => set("facebookUrl", e.target.value)}
                 />
               </Field>
-              <Field label="קישור לחוזה (Drive וכו׳)" htmlFor="contractUrl" error={urlError("contractUrl")}>
+              <Field
+                label={he.contract.fields.contractUrl}
+                htmlFor="contractUrl"
+                error={urlError("contractUrl")}
+              >
                 <Input
                   id="contractUrl"
                   dir="ltr"
@@ -726,8 +745,8 @@ export function ContractDialog({
             </div>
           </Section>
 
-          <Section title="מחיר">
-            <Field label="סוג תמחור">
+          <Section title={he.contract.sections.price}>
+            <Field label={he.contract.fields.pricingType}>
               <Chips
                 options={PRICING_TYPES}
                 labels={he.pricingType}
@@ -737,14 +756,14 @@ export function ContractDialog({
             </Field>
             {form.pricingType === "per_guest" && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="מחיר למנה" htmlFor="perGuest">
+                <Field label={he.contract.fields.perGuestPriceAgorot} htmlFor="perGuest">
                   <MoneyInput
                     id="perGuest"
                     value={form.perGuestPriceAgorot}
                     onChange={(v) => set("perGuestPriceAgorot", v)}
                   />
                 </Field>
-                <Field label="מינימום מנות" htmlFor="minGuests">
+                <Field label={he.contract.fields.minGuests} htmlFor="minGuests">
                   <Input
                     id="minGuests"
                     type="number"
@@ -762,7 +781,7 @@ export function ContractDialog({
             )}
             <div className="grid gap-4 sm:grid-cols-3">
               <Field
-                label="סכום כולל"
+                label={he.contract.fields.totalAmountAgorot}
                 htmlFor="total"
                 className="sm:col-span-2"
                 hint={
@@ -772,8 +791,9 @@ export function ContractDialog({
                       className="text-brand-600 hover:underline"
                       onClick={() => set("totalAmountAgorot", suggested)}
                     >
-                      הצעה: {formatILS(suggested)} (לפי{" "}
-                      {formatNumber(Math.max(guests ?? 0, form.minGuests ?? 0))} מנות) · שימוש
+                      {he.contract.suggestBefore(formatILS(suggested))}
+                      {formatNumber(Math.max(guests ?? 0, form.minGuests ?? 0))}
+                      {he.contract.suggestAfter}
                     </button>
                   ) : undefined
                 }
@@ -784,7 +804,7 @@ export function ContractDialog({
                   onChange={(v) => set("totalAmountAgorot", v)}
                 />
               </Field>
-              <Field label="מע״מ" htmlFor="vat">
+              <Field label={he.contract.fields.vatMode} htmlFor="vat">
                 <Select
                   id="vat"
                   value={form.vatMode}
@@ -798,7 +818,7 @@ export function ContractDialog({
                 </Select>
               </Field>
             </div>
-            <Field label="תאריך חתימה" htmlFor="signedOn" className="sm:max-w-60">
+            <Field label={he.contract.fields.signedOn} htmlFor="signedOn" className="sm:max-w-60">
               <Input
                 id="signedOn"
                 type="date"
@@ -808,10 +828,8 @@ export function ContractDialog({
             </Field>
           </Section>
 
-          <Section title="פריסת תשלומים">
-            <p className="-mt-2 text-xs text-muted">
-              ממועדי התשלום נשלחות התזכורות. מועדים ששולמו או בוטלו נעולים.
-            </p>
+          <Section title={he.contract.sections.schedule}>
+            <p className="-mt-2 text-xs text-muted">{he.contract.scheduleHint}</p>
             <div className="grid gap-3">
               {form.schedule.map((row, index) => {
                 const locked = row.status !== "pending";
@@ -828,7 +846,7 @@ export function ContractDialog({
                         aria-invalid={invalid.has(`schedule.${row.key}.label`) || undefined}
                         value={row.label}
                         onChange={(e) => setRow(row.key, { label: e.target.value })}
-                        placeholder="שם התשלום"
+                        placeholder={he.contract.installmentName}
                       />
                       {row.id && (
                         <Badge tone={scheduleTone[row.status]} className="shrink-0">
@@ -839,7 +857,7 @@ export function ContractDialog({
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`הסרת ${row.label || "מועד"}`}
+                          aria-label={he.common.remove(row.label || he.contract.installmentFallback)}
                           onClick={() =>
                             set(
                               "schedule",
@@ -855,12 +873,12 @@ export function ContractDialog({
                       <div className="flex min-w-0 gap-2">
                         <Select
                           className="w-24 shrink-0"
-                          aria-label="סכום או אחוז"
+                          aria-label={he.contract.amountOrPercent}
                           value={row.mode}
                           onChange={(e) => setRow(row.key, { mode: e.target.value as ScheduleRow["mode"] })}
                         >
-                          <option value="amount">סכום</option>
-                          <option value="percent">אחוז</option>
+                          <option value="amount">{he.contract.amount}</option>
+                          <option value="percent">{he.contract.percent}</option>
                         </Select>
                         {row.mode === "amount" ? (
                           <MoneyInput
@@ -895,14 +913,14 @@ export function ContractDialog({
                       <div className="flex min-w-0 gap-2">
                         <Select
                           className="w-40 shrink-0"
-                          aria-label="מתי"
+                          aria-label={he.contract.when}
                           value={row.timing}
                           onChange={(e) => setRow(row.key, { timing: e.target.value as Timing })}
                         >
-                          <option value="date">בתאריך</option>
-                          <option value="before_event">ימים לפני האירוע</option>
-                          <option value="after_event">ימים אחרי האירוע</option>
-                          <option value="after_signing">ימים אחרי החתימה</option>
+                          <option value="date">{he.contract.timing.date}</option>
+                          <option value="before_event">{he.contract.timing.before_event}</option>
+                          <option value="after_event">{he.contract.timing.after_event}</option>
+                          <option value="after_signing">{he.contract.timing.after_signing}</option>
                         </Select>
                         {row.timing === "date" ? (
                           <Input
@@ -920,7 +938,7 @@ export function ContractDialog({
                             type="number"
                             dir="ltr"
                             min={0}
-                            placeholder="ימים"
+                            placeholder={he.contract.days}
                             className="min-w-0"
                             value={row.days ?? ""}
                             onChange={(e) =>
@@ -943,7 +961,9 @@ export function ContractDialog({
                 );
               })}
               {form.schedule.length === 0 && !editing && (
-                <p className="rounded-xl bg-soft p-4 text-center text-sm text-muted">עוד אין מועדי תשלום</p>
+                <p className="rounded-xl bg-soft p-4 text-center text-sm text-muted">
+                  {he.contract.noSchedule}
+                </p>
               )}
               {editing && (
                 <Button
@@ -952,27 +972,39 @@ export function ContractDialog({
                   onClick={() =>
                     set("schedule", [
                       ...form.schedule,
-                      newRow(form.schedule.length === 0 ? "מקדמה" : `תשלום ${form.schedule.length + 1}`),
+                      newRow(
+                        form.schedule.length === 0
+                          ? he.contract.firstInstallment
+                          : he.contract.nthInstallment(form.schedule.length + 1),
+                      ),
                     ])
                   }
                 >
                   <Plus className="size-4" />
-                  הוספת מועד
+                  {he.contract.addInstallment}
                 </Button>
               )}
             </div>
           </Section>
 
-          <Section title="פרטי החוזה">
+          <Section title={he.contract.sections.details}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="מה כלול" htmlFor="included" hint={editing ? "פריט בכל שורה" : undefined}>
+              <Field
+                label={he.contract.fields.includedItems}
+                htmlFor="included"
+                hint={editing ? he.contract.onePerLine : undefined}
+              >
                 <Textarea
                   id="included"
                   value={form.includedText}
                   onChange={(e) => set("includedText", e.target.value)}
                 />
               </Field>
-              <Field label="מה לא כלול" htmlFor="excluded" hint={editing ? "פריט בכל שורה" : undefined}>
+              <Field
+                label={he.contract.fields.excludedItems}
+                htmlFor="excluded"
+                hint={editing ? he.contract.onePerLine : undefined}
+              >
                 <Textarea
                   id="excluded"
                   value={form.excludedText}
@@ -980,7 +1012,7 @@ export function ContractDialog({
                 />
               </Field>
             </div>
-            <Field label="מדיניות ביטול" htmlFor="cancellation">
+            <Field label={he.contract.fields.cancellationPolicy} htmlFor="cancellation">
               <Textarea
                 id="cancellation"
                 className="min-h-16"
@@ -988,7 +1020,7 @@ export function ContractDialog({
                 onChange={(e) => set("cancellationPolicy", e.target.value)}
               />
             </Field>
-            <Field label="הערות" htmlFor="contractNotes">
+            <Field label={he.contract.fields.notes} htmlFor="contractNotes">
               <Textarea
                 id="contractNotes"
                 className="min-h-16"
@@ -1003,14 +1035,15 @@ export function ContractDialog({
       <ConfirmDialog
         open={statusConfirm != null}
         onOpenChange={(o) => !o && keepStatus()}
-        title={statusConfirm ? `לשנות ל"${he.contractStatus[statusConfirm.status]}"?` : ""}
+        title={statusConfirm ? he.contract.statusConfirmTitle(he.contractStatus[statusConfirm.status]) : ""}
         description={
           <>
-            שאר הפרטים כבר נשמרו. {statusConfirm?.count} מועדי תשלום שעוד לא שולמו יבוטלו, וגם התזכורות שלהם.
-            תשלומים שכבר בוצעו נשמרים ונספרים בתקציב.
+            {he.contract.statusConfirmBefore}
+            {statusConfirm?.count}
+            {he.contract.statusConfirmAfter}
           </>
         }
-        confirmLabel="כן, לשנות"
+        confirmLabel={he.contract.statusConfirm}
         loading={saving}
         onConfirm={confirmStatus}
       />

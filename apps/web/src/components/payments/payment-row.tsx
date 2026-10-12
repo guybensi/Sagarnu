@@ -13,7 +13,7 @@ import { toastError } from "@/lib/errors";
 import { ACCEPT_RECEIPTS, fileErrorMessage, formatFileSize, prepareReceipt } from "@/lib/files";
 import { useRefreshEvent } from "@/lib/use-refresh";
 
-const KIND_LABEL: Record<PaymentFileKind, string> = { receipt: "קבלה", confirmation: "אישור העברה" };
+const KIND_LABEL: Record<PaymentFileKind, string> = he.paymentFileKind;
 
 function FileChip({
   file,
@@ -41,7 +41,7 @@ function FileChip({
       {editable && (
         <button
           type="button"
-          aria-label={`מחיקת ${file.name}`}
+          aria-label={he.payments.deleteFile(file.name)}
           onClick={onDelete}
           className="rounded p-0.5 text-muted hover:bg-line hover:text-ink"
         >
@@ -79,7 +79,7 @@ export function PaymentRow({
       const { name, dataUrl } = await prepareReceipt(file);
       await endpoints.payments.uploadFile(eventId, p.id, { kind, name, dataUrl });
       await refresh();
-      toast.success("הקובץ צורף");
+      toast.success(he.payments.fileAttached);
     } catch (e) {
       const message = fileErrorMessage(e);
       if (message) toast.error(message);
@@ -102,8 +102,8 @@ export function PaymentRow({
   };
 
   const links = [
-    { href: p.receiptUrl, label: "קבלה" },
-    { href: p.confirmationUrl, label: "אישור" },
+    { href: p.receiptUrl, label: he.paymentFileKind.receipt },
+    { href: p.confirmationUrl, label: he.payments.confirmationShort },
   ].filter((l): l is { href: string; label: string } => !!l.href);
 
   return (
@@ -133,7 +133,7 @@ export function PaymentRow({
           </a>
         ))}
         {editable && (
-          <Button size="icon" variant="ghost" aria-label="מחיקת תשלום" onClick={onDelete}>
+          <Button size="icon" variant="ghost" aria-label={he.payments.deletePayment} onClick={onDelete}>
             <X className="size-4 text-muted" />
           </Button>
         )}
@@ -179,9 +179,9 @@ export function PaymentRow({
         open={deleting != null}
         onOpenChange={(o) => !o && setDeleting(null)}
         danger
-        title="למחוק את הקובץ?"
-        description={`"${deleting?.name}" יוסר מהתשלום.`}
-        confirmLabel="מחיקה"
+        title={he.payments.deleteFileTitle}
+        description={he.payments.deleteFileText(deleting?.name ?? "")}
+        confirmLabel={he.common.delete}
         onConfirm={removeFile}
       />
     </li>

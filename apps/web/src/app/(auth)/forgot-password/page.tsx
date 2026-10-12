@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
@@ -33,12 +34,14 @@ export default function ForgotPasswordPage() {
         <div className="rounded-full bg-brand-50 p-4 text-brand-500">
           <MailCheck className="size-7" />
         </div>
-        <h1 className="text-xl font-bold">בדקו את תיבת המייל</h1>
+        <h1 className="text-xl font-bold">{he.auth.forgot.sentTitle}</h1>
         <p className="text-sm text-muted">
-          אם יש חשבון עם <span className="num">{email}</span>, שלחנו אליו קישור לאיפוס הסיסמה.
+          {he.auth.forgot.sentBefore}
+          <span className="num">{email}</span>
+          {he.auth.forgot.sentAfter}
         </p>
         <Link href="/login" className="text-sm font-medium text-brand-600 hover:underline">
-          חזרה להתחברות
+          {he.auth.backToLogin}
         </Link>
       </div>
     );
@@ -47,10 +50,10 @@ export default function ForgotPasswordPage() {
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold">שכחתי סיסמה</h1>
-        <p className="mt-1 text-sm text-muted">נשלח קישור לבחירת סיסמה חדשה</p>
+        <h1 className="text-2xl font-bold">{he.auth.forgot.title}</h1>
+        <p className="mt-1 text-sm text-muted">{he.auth.forgot.subtitle}</p>
       </div>
-      <Field label="אימייל" htmlFor="email">
+      <Field label={he.auth.email} htmlFor="email">
         <Input
           id="email"
           type="email"
@@ -62,10 +65,10 @@ export default function ForgotPasswordPage() {
       </Field>
       {error && <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</div>}
       <Button type="submit" size="lg" loading={loading}>
-        שליחת קישור
+        {he.auth.forgot.submit}
       </Button>
       <Link href="/login" className="text-center text-sm text-muted hover:underline">
-        חזרה להתחברות
+        {he.auth.backToLogin}
       </Link>
     </form>
   );

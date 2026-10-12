@@ -27,15 +27,11 @@ import { useEventId } from "@/lib/use-event-id";
 import { useRefreshEvent } from "@/lib/use-refresh";
 
 const INVITE_ROLES = ["editor", "viewer"] as const;
-const ROLE_HINT: Record<Role, string> = {
-  owner: "הכול, כולל הזמנת חברים והרשאות",
-  editor: "צפייה ועריכה של חוזים, תשלומים ופרטים",
-  viewer: "רק צפייה",
-};
+const ROLE_HINT: Record<Role, string> = he.members.roleHint;
 
 function InviteResult({ result, eventName }: { result: CreateInvitationResultDto; eventName: string }) {
   const [copied, setCopied] = useState(false);
-  const message = `הוזמנת לנהל איתנו את "${eventName}" בסגרנו: ${result.inviteUrl}`;
+  const message = he.members.whatsappMessage(eventName, result.inviteUrl);
   const copy = async () => {
     await navigator.clipboard.writeText(result.inviteUrl);
     setCopied(true);
@@ -45,18 +41,20 @@ function InviteResult({ result, eventName }: { result: CreateInvitationResultDto
     <div className="mt-4 grid gap-3 rounded-2xl border border-brand-200 bg-brand-50/50 p-4">
       <p className="flex items-center gap-2 text-sm font-medium">
         <Check className="size-4 text-success" />
-        ההזמנה ל-<span className="num">{result.invitation.email}</span> מוכנה
+        {he.members.readyBefore}
+        <span className="num">{result.invitation.email}</span>
+        {he.members.readyAfter}
       </p>
       <p className="text-xs text-muted">
         {result.emailSent ? (
           <>
             <Mail className="me-1 inline size-3.5" />
-            שלחנו מייל עם הקישור. אפשר לשלוח אותו גם בוואטסאפ.
+            {he.members.emailSent}
           </>
         ) : (
-          "המייל לא נשלח (עדיין אין דומיין מאומת לשליחה). שלחו את הקישור בעצמכם."
+          he.members.emailNotSent
         )}{" "}
-        הקישור בתוקף 7 ימים ועובד פעם אחת.
+        {he.members.linkValidity}
       </p>
       <div className="flex gap-2">
         <Input
@@ -64,11 +62,11 @@ function InviteResult({ result, eventName }: { result: CreateInvitationResultDto
           dir="ltr"
           value={result.inviteUrl}
           onFocus={(e) => e.target.select()}
-          aria-label="קישור הזמנה"
+          aria-label={he.members.inviteLink}
         />
         <Button variant="secondary" onClick={copy}>
           {copied ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
-          {copied ? "הועתק" : "העתקה"}
+          {copied ? he.members.copied : he.members.copy}
         </Button>
       </div>
       <a
@@ -78,7 +76,7 @@ function InviteResult({ result, eventName }: { result: CreateInvitationResultDto
         className="inline-flex items-center gap-1.5 justify-self-start rounded-xl bg-[#25D366] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
       >
         <MessageCircle className="size-4" />
-        שליחה בוואטסאפ
+        {he.members.sendWhatsapp}
       </a>
     </div>
   );
@@ -108,7 +106,7 @@ function MembersView() {
   const invite = async (e: FormEvent) => {
     e.preventDefault();
     const parsed = createInvitationSchema.safeParse({ email, role });
-    if (!parsed.success) return setEmailError("אימייל לא תקין");
+    if (!parsed.success) return setEmailError(he.auth.invalidEmail);
     setEmailError("");
     setSending(true);
     try {
@@ -117,7 +115,7 @@ function MembersView() {
       await refresh();
     } catch (err) {
       if (err instanceof ApiRequestError && err.details?.reason === "already_member") {
-        setEmailError("כבר חבר/ה באירוע");
+        setEmailError(he.members.alreadyMember);
       } else toastError(err);
     } finally {
       setSending(false);
@@ -131,7 +129,7 @@ function MembersView() {
       toast.success(`${member.name}: ${he.role[next]}`);
     } catch (err) {
       if (err instanceof ApiRequestError && err.details?.reason === "last_owner") {
-        toast.error("חייב להישאר לפחות בעלים אחד לאירוע");
+        toast.error(he.members.needOwner);
       } else toastError(err);
       await refresh();
     }
@@ -151,7 +149,7 @@ function MembersView() {
       setRemoving(null);
     } catch (err) {
       if (err instanceof ApiRequestError && err.details?.reason === "last_owner") {
-        toast.error("חייב להישאר לפחות בעלים אחד לאירוע");
+        toast.error(he.members.needOwner);
       } else toastError(err);
     }
   };
@@ -168,19 +166,17 @@ function MembersView() {
   return (
     <div className="mx-auto grid max-w-3xl gap-5">
       <div>
-        <h1 className="text-2xl font-bold">שיתוף</h1>
-        <p className="text-sm text-muted">מי עוד מנהל איתך את האירוע</p>
+        <h1 className="text-2xl font-bold">{he.members.title}</h1>
+        <p className="text-sm text-muted">{he.members.subtitle}</p>
       </div>
 
       <Card className={cn(highlight && "ring-3 ring-brand-200")}>
-        <CardTitle icon={<UserPlus className="size-5" />}>הזמנת שותפים</CardTitle>
+        <CardTitle icon={<UserPlus className="size-5" />}>{he.members.inviteTitle}</CardTitle>
         <p className="-mt-2 mb-4 text-sm text-muted">
-          {me.data?.userType === "planner"
-            ? "הזמינו את בני הזוג כדי שיראו את החוזים, התשלומים והתקציב, ויוכלו לעדכן בעצמם."
-            : "בן/בת הזוג, הורים או המפיק/ה יוכלו לצפות באירוע או לערוך אותו."}
+          {me.data?.userType === "planner" ? he.members.inviteCouple : he.members.inviteAnyone}
         </p>
         <form onSubmit={invite} className="grid gap-4 sm:grid-cols-[1fr_11rem_auto] sm:items-start">
-          <Field label="אימייל" htmlFor="inviteEmail" error={emailError}>
+          <Field label={he.auth.email} htmlFor="inviteEmail" error={emailError}>
             <Input
               id="inviteEmail"
               dir="ltr"
@@ -191,7 +187,7 @@ function MembersView() {
               aria-invalid={!!emailError || undefined}
             />
           </Field>
-          <Field label="הרשאה" htmlFor="inviteRole" hint={ROLE_HINT[role]}>
+          <Field label={he.members.role} htmlFor="inviteRole" hint={ROLE_HINT[role]}>
             <Select id="inviteRole" value={role} onChange={(e) => setRole(e.target.value as typeof role)}>
               {INVITE_ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -201,7 +197,7 @@ function MembersView() {
             </Select>
           </Field>
           <Button type="submit" loading={sending} className="sm:mt-6.5">
-            יצירת הזמנה
+            {he.members.createInvite}
           </Button>
         </form>
         {result && <InviteResult result={result} eventName={event.data?.name ?? ""} />}
@@ -209,20 +205,21 @@ function MembersView() {
 
       {invitations.data && invitations.data.length > 0 && (
         <Card>
-          <CardTitle>ממתינים להצטרפות</CardTitle>
+          <CardTitle>{he.members.pending}</CardTitle>
           <ul className="divide-y divide-line">
             {invitations.data.map((inv) => (
               <li key={inv.id} className="flex items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="num truncate text-sm font-medium">{inv.email}</p>
                   <p className="text-xs text-muted">
-                    {he.role[inv.role]} · בתוקף עד{" "}
+                    {he.role[inv.role]}
+                    {he.members.validUntil}
                     <span className="num">{formatDateTime(inv.expiresAt)}</span>
                   </p>
                 </div>
                 <Button size="sm" variant="ghost" onClick={() => revoke(inv.id)}>
                   <X className="size-3.5" />
-                  ביטול
+                  {he.common.cancel}
                 </Button>
               </li>
             ))}
@@ -231,7 +228,7 @@ function MembersView() {
       )}
 
       <Card>
-        <CardTitle>חברים באירוע</CardTitle>
+        <CardTitle>{he.members.membersTitle}</CardTitle>
         <ul className="divide-y divide-line">
           {members.data.map((m) => {
             const isMe = m.userId === me.data?.id;
@@ -244,7 +241,7 @@ function MembersView() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">
                     {m.name}
-                    {isMe && <span className="ms-1.5 text-xs font-normal text-muted">(את/ה)</span>}
+                    {isMe && <span className="ms-1.5 text-xs font-normal text-muted">{he.members.you}</span>}
                   </p>
                   <p className="num truncate text-xs text-muted">{m.email}</p>
                 </div>
@@ -254,7 +251,7 @@ function MembersView() {
                   </Badge>
                 ) : (
                   <Select
-                    aria-label={`הרשאה של ${m.name}`}
+                    aria-label={he.members.roleOf(m.name)}
                     className="h-9 w-36 shrink-0"
                     value={m.role}
                     onChange={(e) => changeRole(m, e.target.value as Role)}
@@ -270,7 +267,7 @@ function MembersView() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label={isMe ? "יציאה מהאירוע" : `הסרת ${m.name}`}
+                    aria-label={isMe ? he.members.leave : he.common.remove(m.name)}
                     onClick={() => setRemoving(m)}
                   >
                     <UserMinus className="size-4 text-muted" />
@@ -280,24 +277,20 @@ function MembersView() {
             );
           })}
         </ul>
-        {owners <= 1 && (
-          <p className="mt-2 text-xs text-muted">
-            לאירוע חייב להיות לפחות בעלים אחד. כדי להעביר בעלות, הופכים חבר אחר לבעלים קודם.
-          </p>
-        )}
+        {owners <= 1 && <p className="mt-2 text-xs text-muted">{he.members.ownerRule}</p>}
       </Card>
 
       <ConfirmDialog
         open={removing != null}
         onOpenChange={(o) => !o && setRemoving(null)}
         danger
-        title={removing?.userId === me.data?.id ? "לצאת מהאירוע?" : `להסיר את ${removing?.name}?`}
-        description={
+        title={
           removing?.userId === me.data?.id
-            ? "האירוע לא יופיע אצלך יותר. אפשר לחזור רק בהזמנה חדשה."
-            : "האירוע לא יופיע אצלו/ה יותר. החוזים והתשלומים נשארים."
+            ? he.members.leaveTitle
+            : he.members.removeTitle(removing?.name ?? "")
         }
-        confirmLabel={removing?.userId === me.data?.id ? "יציאה" : "הסרה"}
+        description={removing?.userId === me.data?.id ? he.members.leaveText : he.members.removeText}
+        confirmLabel={removing?.userId === me.data?.id ? he.members.leaveConfirm : he.members.removeConfirm}
         onConfirm={remove}
       />
     </div>

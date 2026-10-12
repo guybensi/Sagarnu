@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { X } from "lucide-react";
 import { Dialog as D } from "radix-ui";
 import type { ReactNode } from "react";
@@ -46,7 +47,7 @@ export function Dialog({
               )}
             </div>
             <D.Close asChild>
-              <Button variant="ghost" size="icon" aria-label="סגירה">
+              <Button variant="ghost" size="icon" aria-label={he.common.close}>
                 <X className="size-4" />
               </Button>
             </D.Close>
@@ -78,7 +79,7 @@ export function Drawer({ open, onOpenChange, title, description, children, foote
               )}
             </div>
             <D.Close asChild>
-              <Button variant="ghost" size="icon" aria-label="סגירה">
+              <Button variant="ghost" size="icon" aria-label={he.common.close}>
                 <X className="size-4" />
               </Button>
             </D.Close>
@@ -98,7 +99,7 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "אישור",
+  confirmLabel = he.common.ok,
   danger,
   loading,
   onConfirm,
@@ -120,7 +121,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            ביטול
+            {he.common.cancel}
           </Button>
           <Button variant={danger ? "danger" : "primary"} loading={loading} onClick={onConfirm}>
             {confirmLabel}

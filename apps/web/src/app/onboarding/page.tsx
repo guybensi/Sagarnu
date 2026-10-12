@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { endpoints, keys } from "@sagarnu/api-client";
 import { SYSTEM_CATEGORIES } from "@sagarnu/domain";
 import { createEventSchema } from "@sagarnu/schemas";
@@ -30,17 +31,15 @@ import { toastError } from "@/lib/errors";
 type Step = { title: string; subtitle: string; render: (p: FieldProps) => React.ReactNode };
 
 const STEPS: Step[] = [
-  { title: "מתי החתונה?", subtitle: "אפשר לדלג ולמלא אחר כך", render: (p) => <WhenFields {...p} /> },
+  { ...he.onboarding.steps.when, render: (p) => <WhenFields {...p} /> },
   {
-    title: "כמה אורחים ומה התקציב?",
-    subtitle: "הערכה גסה מספיקה בשלב הזה",
+    ...he.onboarding.steps.size,
     render: (p) => <SizeFields {...p} />,
   },
-  { title: "איפה?", subtitle: "עיר ואולם, אם כבר סגרתם", render: (p) => <PlaceFields {...p} /> },
-  { title: "מי מתחתנים?", subtitle: "השמות יופיעו בדשבורד", render: (p) => <PeopleFields {...p} /> },
+  { ...he.onboarding.steps.place, render: (p) => <PlaceFields {...p} /> },
+  { ...he.onboarding.steps.people, render: (p) => <PeopleFields {...p} /> },
   {
-    title: "איזה אירוע זה?",
-    subtitle: "עוזר לנו להתאים את הקטגוריות",
+    ...he.onboarding.steps.style,
     render: (p) => <StyleFields {...p} />,
   },
 ];
@@ -96,7 +95,7 @@ export default function OnboardingPage() {
       completeQuestionnaire: true,
     });
     if (!payload.success) {
-      toast.error("יש שדה לא תקין באחד השלבים הקודמים");
+      toast.error(he.onboarding.invalidEarlierStep);
       return;
     }
     setSaving(true);
@@ -106,7 +105,7 @@ export default function OnboardingPage() {
       await qc.invalidateQueries({ queryKey: keys.me });
       // A planner's next step is sharing the event with the couple.
       if (session.data?.user.userType === "planner") {
-        toast.success("האירוע נוצר. עכשיו מזמינים את בני הזוג");
+        toast.success(he.onboarding.createdInviteCouple);
         router.replace(`/e/${event.id}/members?invite=1`);
       } else router.replace(`/e/${event.id}`);
     } catch (e) {
@@ -119,9 +118,7 @@ export default function OnboardingPage() {
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-6 sm:py-10">
       <div className="mb-8 flex items-center justify-between">
         <Logo />
-        <span className="text-sm text-muted">
-          שלב {step + 1} מתוך {total}
-        </span>
+        <span className="text-sm text-muted">{he.onboarding.stepOf(step + 1, total)}</span>
       </div>
 
       <div className="mb-8 flex gap-1.5">
@@ -139,10 +136,8 @@ export default function OnboardingPage() {
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold">אילו ספקים רלוונטיים לכם?</h1>
-            <p className="mt-1 mb-7 text-sm text-muted">
-              קטגוריות שלא סימנתם לא יופיעו בדשבורד בתור &quot;עוד אין ספק&quot;. אפשר לשנות בכל שלב.
-            </p>
+            <h1 className="text-2xl font-bold">{he.onboarding.categoriesTitle}</h1>
+            <p className="mt-1 mb-7 text-sm text-muted">{he.onboarding.categoriesHint}</p>
             <div className="flex flex-wrap gap-2">
               {SYSTEM_CATEGORIES.filter((c) => c.key !== "other").map((c) => {
                 const on = relevant.has(c.key);
@@ -179,7 +174,7 @@ export default function OnboardingPage() {
                   {name}
                   <button
                     type="button"
-                    aria-label={`הסרת ${name}`}
+                    aria-label={he.common.remove(name)}
                     onClick={() => setCustom((list) => list.filter((n) => n !== name))}
                     className="rounded-full p-0.5 hover:bg-brand-100"
                   >
@@ -197,15 +192,15 @@ export default function OnboardingPage() {
               }}
             >
               <Input
-                aria-label="קטגוריה משלכם"
-                placeholder="קטגוריה משלכם, למשל: צלם מגנטים"
+                aria-label={he.onboarding.customCategory}
+                placeholder={he.onboarding.customCategoryPlaceholder}
                 maxLength={40}
                 value={customDraft}
                 onChange={(e) => setCustomDraft(e.target.value)}
               />
               <Button type="submit" variant="secondary" disabled={!customDraft.trim()}>
                 <Plus className="size-4" />
-                הוספה
+                {he.common.add}
               </Button>
             </form>
           </>
@@ -215,21 +210,21 @@ export default function OnboardingPage() {
       <div className="mt-6 flex items-center justify-between gap-3">
         <Button variant="ghost" onClick={() => setStep((s) => s - 1)} disabled={step === 0}>
           <ArrowRight className="size-4" />
-          הקודם
+          {he.common.previous}
         </Button>
         <div className="flex gap-2">
           {!isLast && (
             <Button variant="secondary" onClick={() => setStep((s) => s + 1)}>
-              דלג
+              {he.common.skip}
             </Button>
           )}
           {isLast ? (
             <Button onClick={finish} loading={saving} size="lg">
-              סיימנו, לדשבורד
+              {he.onboarding.finish}
             </Button>
           ) : (
             <Button onClick={() => setStep((s) => s + 1)}>
-              הבא
+              {he.common.next}
               <ArrowLeft className="size-4" />
             </Button>
           )}

@@ -2,7 +2,7 @@
 
 import { useDashboard } from "@sagarnu/api-client";
 import type { ExpenseSummary } from "@sagarnu/domain";
-import { formatDate, formatILS, formatNumber } from "@sagarnu/i18n";
+import { formatDate, formatILS, formatNumber, he } from "@sagarnu/i18n";
 import type { DueItemDto } from "@sagarnu/schemas";
 import { AlertTriangle, CalendarClock, Check, PiggyBank, Store, Users } from "lucide-react";
 import Link from "next/link";
@@ -25,40 +25,42 @@ function BudgetCard({ summary }: { summary: ExpenseSummary }) {
     <Card>
       <CardTitle
         icon={<PiggyBank className="size-5" />}
-        action={summary.isOverBudget && <Badge tone="danger">חריגה מהתקציב</Badge>}
+        action={summary.isOverBudget && <Badge tone="danger">{he.dashboard.overBudget}</Badge>}
       >
-        מצב התקציב
+        {he.dashboard.budgetTitle}
       </CardTitle>
       <div className="flex h-4 overflow-hidden rounded-full bg-soft">
-        <div className="bg-success" style={{ width: pct(summary.paidAgorot) }} title="שולם" />
+        <div className="bg-success" style={{ width: pct(summary.paidAgorot) }} title={he.dashboard.paid} />
         <div
           className="bg-brand-200"
           style={{ width: pct(summary.remainingAgorot) }}
-          title="התחייבות שנותרה"
+          title={he.dashboard.committedLeft}
         />
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
         <div>
           <dt className="flex items-center gap-1.5 text-muted">
             <span className="size-2 rounded-full bg-success" />
-            שולם
+            {he.dashboard.paid}
           </dt>
           <dd className="num mt-0.5 font-semibold">{formatILS(summary.paidAgorot)}</dd>
         </div>
         <div>
           <dt className="flex items-center gap-1.5 text-muted">
             <span className="size-2 rounded-full bg-brand-200" />
-            נותר לשלם
+            {he.dashboard.leftToPay}
           </dt>
           <dd className="num mt-0.5 font-semibold">{formatILS(summary.remainingAgorot)}</dd>
         </div>
         <div>
-          <dt className="text-muted">תקציב משוער</dt>
-          <dd className="num mt-0.5 font-semibold">{formatILS(budget, "לא הוגדר")}</dd>
+          <dt className="text-muted">{he.dashboard.estimatedBudget}</dt>
+          <dd className="num mt-0.5 font-semibold">{formatILS(budget, he.dashboard.notSet)}</dd>
         </div>
         {summary.budgetLeftAgorot != null && (
           <div>
-            <dt className="text-muted">{summary.isOverBudget ? "חריגה" : "יתרה בתקציב"}</dt>
+            <dt className="text-muted">
+              {summary.isOverBudget ? he.dashboard.over : he.dashboard.budgetLeft}
+            </dt>
             <dd className={cn("num mt-0.5 font-semibold", summary.isOverBudget && "text-danger")}>
               {formatILS(Math.abs(summary.budgetLeftAgorot))}
             </dd>
@@ -93,7 +95,7 @@ function DueRow({
       {canPay && (
         <Button size="sm" variant={tone === "danger" ? "primary" : "secondary"} onClick={onPay}>
           <Check className="size-3.5" />
-          {tone === "danger" ? "סמן כשולם" : "תשלום"}
+          {tone === "danger" ? he.dashboard.markPaid : he.dashboard.pay}
         </Button>
       )}
     </li>
@@ -123,30 +125,30 @@ export default function DashboardPage() {
       </div>
 
       <Card className="flex flex-col">
-        <CardTitle icon={<CalendarClock className="size-5" />}>התשלום הקרוב</CardTitle>
+        <CardTitle icon={<CalendarClock className="size-5" />}>{he.dashboard.nextPayment}</CardTitle>
         {next ? (
           <div className="flex flex-1 flex-col justify-between gap-4">
             <div>
               <p className="font-semibold">{next.vendorName}</p>
               <p className="text-sm text-muted">{next.label}</p>
               <p className="num mt-3 text-3xl font-bold text-brand-600">{formatILS(next.remainingAgorot)}</p>
-              <p className="num text-sm text-muted">עד {formatDate(next.dueDate)}</p>
+              <p className="num text-sm text-muted">{he.dashboard.dueBy(formatDate(next.dueDate))}</p>
             </div>
             {canPay && (
               <Button variant="secondary" onClick={() => setPaying(next)}>
-                הוספת תשלום
+                {he.payments.add}
               </Button>
             )}
           </div>
         ) : (
-          <p className="text-sm text-muted">אין תשלומים מתוכננים. מועדי תשלום מוסיפים בחוזה של כל ספק.</p>
+          <p className="text-sm text-muted">{he.dashboard.noPlannedPayments}</p>
         )}
       </Card>
 
       {overdue.length > 0 && (
         <Card className="border border-danger/20 bg-danger-soft/40 lg:col-span-3">
           <CardTitle icon={<AlertTriangle className="size-5 text-danger" />}>
-            <span className="text-danger">תשלומים שעבר מועדם</span>
+            <span className="text-danger">{he.dashboard.overdue}</span>
           </CardTitle>
           <ul className="divide-y divide-danger/10">
             {overdue.map((item) => (
@@ -167,12 +169,12 @@ export default function DashboardPage() {
       </div>
 
       <Card>
-        <CardTitle icon={<Store className="size-5" />}>ספקים</CardTitle>
+        <CardTitle icon={<Store className="size-5" />}>{he.dashboard.vendors}</CardTitle>
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            { n: vendors.approved, label: "מאושרים", tone: "text-success" },
-            { n: vendors.negotiating, label: "במו״מ", tone: "text-warning" },
-            { n: vendors.quotes, label: "הצעות", tone: "text-muted" },
+            { n: vendors.approved, label: he.dashboard.approved, tone: "text-success" },
+            { n: vendors.negotiating, label: he.dashboard.negotiating, tone: "text-warning" },
+            { n: vendors.quotes, label: he.dashboard.quotes, tone: "text-muted" },
           ].map((v) => (
             <div key={v.label} className="rounded-2xl bg-soft py-3">
               <p className={cn("num text-2xl font-bold", v.tone)}>{v.n}</p>
@@ -182,7 +184,7 @@ export default function DashboardPage() {
         </div>
         {vendors.missingCategories.length > 0 && (
           <>
-            <p className="mt-4 mb-2 text-xs text-muted">עוד אין ספק מאושר:</p>
+            <p className="mt-4 mb-2 text-xs text-muted">{he.dashboard.missingVendors}</p>
             <div className="flex flex-wrap gap-1.5">
               {vendors.missingCategories.map((c) => (
                 <Link key={c.id} href={`/e/${eventId}/contracts?category=${c.id}`}>
@@ -196,7 +198,7 @@ export default function DashboardPage() {
 
       {upcoming.length > 1 && (
         <Card className="lg:col-span-2">
-          <CardTitle icon={<CalendarClock className="size-5" />}>תשלומים הבאים</CardTitle>
+          <CardTitle icon={<CalendarClock className="size-5" />}>{he.dashboard.upcoming}</CardTitle>
           <ul className="divide-y divide-line">
             {upcoming.slice(1).map((item) => (
               <DueRow
@@ -216,20 +218,20 @@ export default function DashboardPage() {
           icon={<Users className="size-5" />}
           action={
             <Link href={`/e/${eventId}/details`} className="text-sm text-brand-600 hover:underline">
-              עריכה
+              {he.common.edit}
             </Link>
           }
         >
-          פרטי האירוע
+          {he.dashboard.eventDetails}
         </CardTitle>
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className="text-muted">מוזמנים</dt>
-            <dd className="num font-medium">{formatNumber(event.guestCount, "לא ידוע")}</dd>
+            <dt className="text-muted">{he.dashboard.guests}</dt>
+            <dd className="num font-medium">{formatNumber(event.guestCount, he.dashboard.unknown)}</dd>
           </div>
           <div>
-            <dt className="text-muted">מקום</dt>
-            <dd className="font-medium">{event.venueName ?? event.city ?? "לא ידוע"}</dd>
+            <dt className="text-muted">{he.dashboard.place}</dt>
+            <dd className="font-medium">{event.venueName ?? event.city ?? he.dashboard.unknown}</dd>
           </div>
         </dl>
       </Card>

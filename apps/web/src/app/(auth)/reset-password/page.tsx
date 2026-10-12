@@ -1,5 +1,6 @@
 "use client";
 
+import { he } from "@sagarnu/i18n";
 import { resetPasswordSchema } from "@sagarnu/schemas";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -23,10 +24,10 @@ function ResetPasswordForm() {
   if (!token || params.get("error")) {
     return (
       <div className="flex flex-col gap-4 text-center">
-        <h1 className="text-xl font-bold">הקישור לא תקין</h1>
-        <p className="text-sm text-muted">ייתכן שפג תוקפו. אפשר לבקש קישור חדש.</p>
+        <h1 className="text-xl font-bold">{he.auth.reset.invalidTitle}</h1>
+        <p className="text-sm text-muted">{he.auth.reset.invalidText}</p>
         <Link href="/forgot-password" className="font-medium text-brand-600 hover:underline">
-          שליחת קישור חדש
+          {he.auth.reset.requestNew}
         </Link>
       </div>
     );
@@ -38,22 +39,22 @@ function ResetPasswordForm() {
     if (!parsed.success) {
       return setError(
         parsed.error.issues.some((i) => i.message === "password_mismatch")
-          ? "הסיסמאות לא זהות"
-          : "הסיסמה לא עומדת בדרישות",
+          ? he.fieldErrors.password_mismatch
+          : he.auth.passwordWeak,
       );
     }
     setLoading(true);
     const { error } = await authClient.resetPassword({ newPassword: password, token });
     setLoading(false);
     if (error) return setError(authErrorMessage(error));
-    toast.success("הסיסמה עודכנה. אפשר להתחבר");
+    toast.success(he.auth.reset.done);
     router.replace("/login");
   };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
-      <h1 className="text-2xl font-bold">סיסמה חדשה</h1>
-      <Field label="סיסמה חדשה" htmlFor="password">
+      <h1 className="text-2xl font-bold">{he.auth.reset.title}</h1>
+      <Field label={he.auth.reset.newPassword} htmlFor="password">
         <PasswordInput
           id="password"
           autoComplete="new-password"
@@ -62,7 +63,7 @@ function ResetPasswordForm() {
         />
         <PasswordChecklist password={password} />
       </Field>
-      <Field label="אימות סיסמה" htmlFor="confirm">
+      <Field label={he.auth.reset.confirm} htmlFor="confirm">
         <PasswordInput
           id="confirm"
           autoComplete="new-password"
@@ -72,7 +73,7 @@ function ResetPasswordForm() {
       </Field>
       {error && <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</div>}
       <Button type="submit" size="lg" loading={loading}>
-        שמירת סיסמה
+        {he.auth.reset.submit}
       </Button>
     </form>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { endpoints, keys, useSessions } from "@sagarnu/api-client";
-import { formatDateTime } from "@sagarnu/i18n";
+import { formatDateTime, he } from "@sagarnu/i18n";
 import type { SessionDto } from "@sagarnu/schemas";
 import { useQueryClient } from "@tanstack/react-query";
 import { Laptop, MonitorSmartphone, Smartphone } from "lucide-react";
@@ -13,7 +13,7 @@ import { toastError } from "@/lib/errors";
 
 /** "Chrome · Windows" from a user agent; good enough to recognize your own devices. */
 export function describeDevice(ua: string | null): { label: string; mobile: boolean } {
-  if (!ua) return { label: "מכשיר לא מזוהה", mobile: false };
+  if (!ua) return { label: he.settings.sessions.unknownDevice, mobile: false };
   const browser = /Edg\//.test(ua)
     ? "Edge"
     : /SamsungBrowser/.test(ua)
@@ -38,7 +38,7 @@ export function describeDevice(ua: string | null): { label: string; mobile: bool
             : /Linux/.test(ua)
               ? "Linux"
               : null;
-  const label = [browser, os].filter(Boolean).join(" · ") || "מכשיר לא מזוהה";
+  const label = [browser, os].filter(Boolean).join(" · ") || he.settings.sessions.unknownDevice;
   return { label, mobile: /iPhone|Android|Mobile/.test(ua) };
 }
 
@@ -53,12 +53,14 @@ function SessionRow({ s, onRevoke, busy }: { s: SessionDto; onRevoke: () => void
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
           <span dir="ltr">{label}</span>
-          {s.current && <Badge tone="success">המכשיר הזה</Badge>}
+          {s.current && <Badge tone="success">{he.settings.sessions.thisDevice}</Badge>}
         </p>
         <p className="text-xs text-muted">
-          התחברות: <span className="num">{formatDateTime(s.createdAt)}</span>
+          {he.settings.sessions.signedIn}
+          <span className="num">{formatDateTime(s.createdAt)}</span>
           {" · "}
-          פעילות אחרונה: <span className="num">{formatDateTime(s.lastActiveAt)}</span>
+          {he.settings.sessions.lastActive}
+          <span className="num">{formatDateTime(s.lastActiveAt)}</span>
           {s.ipAddress && (
             <>
               {" · "}
@@ -71,7 +73,7 @@ function SessionRow({ s, onRevoke, busy }: { s: SessionDto; onRevoke: () => void
       </div>
       {!s.current && (
         <Button variant="secondary" size="sm" loading={busy} onClick={onRevoke}>
-          ניתוק
+          {he.settings.sessions.signOut}
         </Button>
       )}
     </li>
@@ -107,14 +109,14 @@ export function SessionsCard() {
               variant="ghost"
               size="sm"
               loading={busy === "all"}
-              onClick={() => run("all", endpoints.me.revokeOtherSessions, "כל שאר המכשירים נותקו")}
+              onClick={() => run("all", endpoints.me.revokeOtherSessions, he.settings.sessions.allSignedOut)}
             >
-              ניתוק כל השאר
+              {he.settings.sessions.signOutAll}
             </Button>
           )
         }
       >
-        מכשירים מחוברים
+        {he.settings.sessions.title}
       </CardTitle>
       {sessions.isPending ? (
         <Spinner />
@@ -125,12 +127,14 @@ export function SessionsCard() {
               key={s.id}
               s={s}
               busy={busy === s.id}
-              onRevoke={() => run(s.id, () => endpoints.me.revokeSession(s.id), "המכשיר נותק")}
+              onRevoke={() =>
+                run(s.id, () => endpoints.me.revokeSession(s.id), he.settings.sessions.signedOut)
+              }
             />
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-muted">לא מזהים מכשיר? כדאי לנתק אותו ולהחליף סיסמה.</p>
+      <p className="mt-2 text-xs text-muted">{he.settings.sessions.hint}</p>
     </Card>
   );
 }
