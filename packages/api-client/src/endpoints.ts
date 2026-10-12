@@ -4,6 +4,8 @@ import type {
   CategoryDto,
   ContractDetailDto,
   ContractDto,
+  ContractFileDto,
+  ContractFileUploadInput,
   CreateContractInput,
   CreateEventInput,
   CreateInvitationInput,
@@ -128,6 +130,12 @@ export const endpoints = {
       api<PaymentFileDto>(`${ev(eventId)}/payments/${paymentId}/files`, { method: "POST", body }),
     removeFile: (eventId: string, fileId: string) =>
       api<void>(`${ev(eventId)}/files/${fileId}`, { method: "DELETE" }),
+  },
+  contractFiles: {
+    upload: (eventId: string, contractId: string, body: ContractFileUploadInput) =>
+      api<ContractFileDto>(`${ev(eventId)}/contracts/${contractId}/files`, { method: "POST", body }),
+    remove: (eventId: string, fileId: string) =>
+      api<void>(`${ev(eventId)}/contract-files/${fileId}`, { method: "DELETE" }),
   },
   expenses: {
     get: (eventId: string) => api<ExpensesDto>(`${ev(eventId)}/expenses`),

@@ -9,6 +9,7 @@ import type { Env } from "./env";
 import { createAuthAttemptLimiter } from "./lib/auth-limits";
 import { requireUser } from "./lib/context";
 import { registerErrorHandler } from "./lib/errors";
+import { contractFileRoutes } from "./routes/contract-files";
 import { contractRoutes } from "./routes/contracts";
 import { coverRoutes } from "./routes/cover";
 import { eventRoutes } from "./routes/events";
@@ -77,6 +78,7 @@ export async function buildApp({ env, db, email }: AppDeps, opts: FastifyServerO
     await protectedApp.register(contractRoutes);
     await protectedApp.register(coverRoutes);
     await protectedApp.register(paymentFileRoutes);
+    await protectedApp.register(contractFileRoutes);
     await protectedApp.register(invitationRoutes(email));
   });
 

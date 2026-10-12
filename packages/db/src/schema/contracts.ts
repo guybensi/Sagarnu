@@ -154,6 +154,30 @@ export const paymentFile = pgTable(
   (t) => [index().on(t.paymentId)],
 );
 
+/**
+ * The contract document itself (signed contract, quote). Stored like payment files until R2;
+ * phase 2's AI analysis reads it from here.
+ */
+export const contractFile = pgTable(
+  "contract_file",
+  {
+    id: id(),
+    contractId: uuid()
+      .notNull()
+      .references(() => contract.id, { onDelete: "cascade" }),
+    eventId: uuid()
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    mime: text().notNull(),
+    sizeBytes: integer().notNull(),
+    data: bytea().notNull(),
+    uploadedBy: uuid().references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.contractId)],
+);
+
 export const auditLog = pgTable(
   "audit_log",
   {

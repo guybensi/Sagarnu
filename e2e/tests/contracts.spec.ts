@@ -89,3 +89,39 @@ test("main screens fit a phone screen without sideways scrolling", async ({ page
     expect(overflow, `horizontal scroll on /e/:id${path}`).toBe(false);
   }
 });
+
+test("a contract file uploads with a new contract and opens from the contract", async ({ page }) => {
+  const errors = collectPageErrors(page);
+  await signUp(page);
+  const { eventId } = await seedEvent(page);
+
+  await page.goto(`/e/${eventId}/contracts`);
+  await page.getByRole("button", { name: "חוזה חדש" }).first().click();
+  await page.getByRole("button", { name: /הזנה ידנית/ }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("שם הספק").fill("די ג'יי רון");
+  await dialog.getByLabel("העלאת קובץ").setInputFiles({
+    name: "חוזה די ג'יי.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF"),
+  });
+  await expect(dialog.getByText("חוזה די ג'יי.pdf")).toBeVisible();
+  await dialog.getByRole("button", { name: "שמירה" }).click();
+  await expect(page.getByRole("heading", { name: "מועדי תשלום" })).toBeVisible();
+
+  // The vendor panel links to the file; the contract (view mode) has "view contract".
+  const link = page.getByRole("link", { name: "חוזה די ג'יי.pdf" });
+  await expect(link).toBeVisible();
+  const res = await page.request.get((await link.getAttribute("href"))!);
+  expect(res.headers()["content-type"]).toBe("application/pdf");
+
+  await page.keyboard.press("Escape");
+  await page
+    .getByRole("button", { name: /די ג'יי רון/ })
+    .first()
+    .click();
+  const view = page.getByRole("dialog").getByRole("link", { name: "צפייה בחוזה" });
+  await expect(view).toBeVisible();
+
+  expect(errors).toEqual([]);
+});

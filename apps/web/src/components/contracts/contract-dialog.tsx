@@ -36,6 +36,8 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { fieldErrors, isConfirmationRequired, toastError } from "@/lib/errors";
 import { useCan } from "@/lib/use-event-id";
 import { useRefreshEvent } from "@/lib/use-refresh";
+import type { PickedFile } from "@/components/payments/file-pick";
+import { ContractFiles, ViewContractButton } from "./contract-files";
 import { scheduleTone } from "./status";
 
 type Timing = "date" | "before_event" | "after_event" | "after_signing";
@@ -330,6 +332,8 @@ export function ContractDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [issues, setIssues] = useState<FormIssue[]>([]);
   const [saving, setSaving] = useState(false);
+  /** Files picked for a contract that is not created yet. */
+  const [pendingFiles, setPendingFiles] = useState<PickedFile[]>([]);
   const [statusConfirm, setStatusConfirm] = useState<{ status: ContractStatus; count: number } | null>(null);
   const invalid = new Set(issues.map((i) => i.key));
   const editing = mode === "edit";
@@ -443,8 +447,14 @@ export function ContractDialog({
         if (!parsed.success) return fail(parsed.error);
         const saved = await endpoints.contracts.create(eventId, parsed.data);
         setIssues([]);
+        // The contract exists either way; a failed upload can be retried in edit mode.
+        const uploads = await Promise.allSettled(
+          pendingFiles.map((f) => endpoints.contractFiles.upload(eventId, saved.id, f)),
+        );
+        setPendingFiles([]);
         await refresh();
-        toast.success(he.contract.created);
+        if (uploads.some((u) => u.status === "rejected")) toast.warning(he.contract.uploadAfterCreateFailed);
+        else toast.success(he.contract.created);
         onOpenChange(false);
         onSaved?.(saved);
         return;
@@ -574,6 +584,7 @@ export function ContractDialog({
     </>
   ) : (
     <>
+      {contract && contract.files.length > 0 && <ViewContractButton files={contract.files} />}
       {onOpenPayments && (
         <Button variant="ghost" className="sm:me-auto" onClick={onOpenPayments}>
           <CalendarClock className="size-4" />
@@ -742,6 +753,13 @@ export function ContractDialog({
                   onChange={(e) => set("contractUrl", e.target.value)}
                 />
               </Field>
+              <ContractFiles
+                eventId={eventId}
+                contractId={contract?.id ?? null}
+                editable={editing && canWrite}
+                pending={pendingFiles}
+                onPendingChange={setPendingFiles}
+              />
             </div>
           </Section>
 

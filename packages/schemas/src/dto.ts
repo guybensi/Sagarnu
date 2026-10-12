@@ -166,6 +166,18 @@ export interface ContractDto {
 export interface ContractDetailDto extends ContractDto {
   schedule: ScheduleItemDto[];
   payments: PaymentDto[];
+  /** Uploaded contract documents, oldest first. */
+  files: ContractFileDto[];
+}
+
+export interface ContractFileDto {
+  id: string;
+  name: string;
+  mime: string;
+  sizeBytes: number;
+  /** Relative URL; only event members can open it. PDFs and images open in the browser, Word downloads. */
+  url: string;
+  createdAt: string;
 }
 
 export interface DueItemDto {

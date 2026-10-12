@@ -127,6 +127,8 @@ export function VendorDrawer({
         { href: c.instagramUrl, icon: Camera, label: he.drawer.links.instagram },
         { href: c.facebookUrl, icon: AtSign, label: he.drawer.links.facebook },
         { href: c.contractUrl, icon: FileText, label: he.drawer.links.contract },
+        // Uploaded contract documents open in a new tab (Word files download).
+        ...c.files.map((f) => ({ href: f.url, icon: FileText, label: f.name })),
       ].filter((l): l is typeof l & { href: string } => !!l.href)
     : [];
 
@@ -205,7 +207,7 @@ export function VendorDrawer({
                 )}
                 {links.map((l) => (
                   <a
-                    key={l.label}
+                    key={l.href}
                     href={l.href}
                     target="_blank"
                     rel="noopener noreferrer"

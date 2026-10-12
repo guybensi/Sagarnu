@@ -686,6 +686,15 @@ export const he = {
     statusConfirmAfter:
       " מועדי תשלום שעוד לא שולמו יבוטלו, וגם התזכורות שלהם. תשלומים שכבר בוצעו נשמרים ונספרים בתקציב.",
     statusConfirm: "כן, לשנות",
+    file: "קובץ החוזה",
+    fileHint: "PDF, Word או תמונה, עד 10MB. אפשר כמה קבצים, למשל חוזה חתום והצעת מחיר.",
+    uploadFile: "העלאת קובץ",
+    fileUploaded: "הקובץ עלה",
+    viewFile: "צפייה בחוזה",
+    deleteFileText: (name: string) => `"${name}" יימחק מהחוזה.`,
+    uploadAfterCreateFailed: "החוזה נשמר, אבל קובץ לא עלה. אפשר להעלות אותו שוב בעריכה",
+    fileTooLarge: "הקובץ גדול מדי (עד 10MB)",
+    fileUnsupported: "אפשר להעלות PDF, Word או תמונה",
   },
   drawer: {
     /** "7 ימים לפני האירוע", "ביום החתימה", "יום אחרי האירוע" … */
@@ -701,7 +710,7 @@ export const he = {
     left: (amount: string) => `נותר ${amount}`,
     markPaid: "סמן כשולם",
     deleted: "החוזה נמחק",
-    links: { website: "אתר", instagram: "אינסטגרם", facebook: "פייסבוק", contract: "החוזה" },
+    links: { website: "אתר", instagram: "אינסטגרם", facebook: "פייסבוק", contract: "קישור לחוזה" },
     total: "סה״כ",
     paid: "שולם",
     overpaid: "שולם ביתר",

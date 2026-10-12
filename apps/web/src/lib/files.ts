@@ -1,7 +1,7 @@
 "use client";
 
 import { he } from "@sagarnu/i18n";
-import { PAYMENT_FILE_MAX_BYTES } from "@sagarnu/schemas";
+import { CONTRACT_FILE_MAX_BYTES, PAYMENT_FILE_MAX_BYTES } from "@sagarnu/schemas";
 
 export class FileTooLargeError extends Error {}
 export class UnsupportedFileError extends Error {}
@@ -60,6 +60,43 @@ export function fileErrorMessage(error: unknown): string | null {
 }
 
 export const ACCEPT_RECEIPTS = "application/pdf,image/*";
+
+const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+export const ACCEPT_CONTRACTS = `application/pdf,.pdf,.doc,.docx,application/msword,${DOCX},image/*`;
+
+/** PDF and Word as-is (up to 10MB); a photo of the pages becomes a JPEG large enough to read. */
+export async function prepareContractFile(file: File): Promise<{ name: string; dataUrl: string }> {
+  const lower = file.name.toLowerCase();
+  // Windows often reports Word files with an empty type, so the extension decides.
+  const mime = lower.endsWith(".pdf")
+    ? "application/pdf"
+    : lower.endsWith(".docx")
+      ? DOCX
+      : lower.endsWith(".doc")
+        ? "application/msword"
+        : null;
+  if (mime) {
+    if (file.size > CONTRACT_FILE_MAX_BYTES) throw new FileTooLargeError();
+    const dataUrl = (await readAsDataUrl(file)).replace(/^data:[^;]*;/, `data:${mime};`);
+    return { name: file.name, dataUrl };
+  }
+  if (!file.type.startsWith("image/")) throw new UnsupportedFileError();
+  let dataUrl: string;
+  try {
+    dataUrl = await resizeImage(file, 2400, 0.85);
+  } catch {
+    throw new UnsupportedFileError();
+  }
+  if (dataUrlBytes(dataUrl) > CONTRACT_FILE_MAX_BYTES) throw new FileTooLargeError();
+  return { name: file.name.replace(/\.[^.]+$/, "") + ".jpg", dataUrl };
+}
+
+/** Hebrew message for a contract file that could not be prepared. */
+export function contractFileErrorMessage(error: unknown): string | null {
+  if (error instanceof FileTooLargeError) return he.contract.fileTooLarge;
+  if (error instanceof UnsupportedFileError) return he.contract.fileUnsupported;
+  return null;
+}
 
 export function formatFileSize(bytes: number): string {
   return bytes < 1024 * 1024

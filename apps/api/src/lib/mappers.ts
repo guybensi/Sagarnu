@@ -1,6 +1,6 @@
 import type { schema } from "@sagarnu/db";
 import type { Role } from "@sagarnu/domain";
-import type { CategoryDto, EventDto, PaymentDto, PaymentFileDto } from "@sagarnu/schemas";
+import type { CategoryDto, ContractFileDto, EventDto, PaymentDto, PaymentFileDto } from "@sagarnu/schemas";
 
 type EventRow = typeof schema.event.$inferSelect;
 type CategoryRow = typeof schema.category.$inferSelect;
@@ -60,6 +60,19 @@ export function toPaymentFileDto(row: PaymentFileMeta): PaymentFileDto {
     mime: row.mime,
     sizeBytes: row.sizeBytes,
     url: `/v1/events/${row.eventId}/files/${row.id}`,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export type ContractFileMeta = Omit<typeof schema.contractFile.$inferSelect, "data">;
+
+export function toContractFileDto(row: ContractFileMeta): ContractFileDto {
+  return {
+    id: row.id,
+    name: row.name,
+    mime: row.mime,
+    sizeBytes: row.sizeBytes,
+    url: `/v1/events/${row.eventId}/contract-files/${row.id}`,
     createdAt: row.createdAt.toISOString(),
   };
 }

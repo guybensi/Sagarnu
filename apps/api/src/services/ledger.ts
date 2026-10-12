@@ -19,9 +19,9 @@ import type {
 } from "@sagarnu/schemas";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type { EventRow } from "../lib/access";
-import { toPaymentDto, type PaymentFileMeta } from "../lib/mappers";
+import { toContractFileDto, toPaymentDto, type ContractFileMeta, type PaymentFileMeta } from "../lib/mappers";
 
-const { contract, payment, paymentFile, paymentScheduleItem } = schema;
+const { contract, contractFile, payment, paymentFile, paymentScheduleItem } = schema;
 
 export type ContractRow = typeof contract.$inferSelect;
 export type ScheduleRow = typeof paymentScheduleItem.$inferSelect;
@@ -58,6 +58,8 @@ export class Ledger {
     private readonly scheduleRows: ScheduleRow[],
     readonly payments: PaymentRow[],
     private readonly files: PaymentFileMeta[] = [],
+    /** Only loaded for a single contract (the detail view). */
+    private readonly contractFiles: ContractFileMeta[] = [],
   ) {
     const byId = new Map(contracts.map((c) => [c.id, c]));
     for (const row of scheduleRows) {
@@ -134,6 +136,7 @@ export class Ledger {
         .filter((p) => p.contractId === c.id)
         .sort((a, b) => b.paidOn.localeCompare(a.paidOn))
         .map((p) => this.paymentDto(p)),
+      files: this.contractFiles.filter((f) => f.contractId === c.id).map(toContractFileDto),
     };
   }
 
@@ -209,6 +212,13 @@ export async function loadLedger(db: Db | Tx, ev: EventRow, contractId?: string)
       .from(payment)
       .where(and(inArray(payment.contractId, ids), isNull(payment.deletedAt))),
   ]);
+  const contractFiles = contractId
+    ? await db
+        .select(CONTRACT_FILE_META)
+        .from(contractFile)
+        .where(eq(contractFile.contractId, contractId))
+        .orderBy(asc(contractFile.createdAt))
+    : [];
   const files =
     payments.length === 0
       ? []
@@ -222,7 +232,7 @@ export async function loadLedger(db: Db | Tx, ev: EventRow, contractId?: string)
             ),
           )
           .orderBy(asc(paymentFile.createdAt));
-  return new Ledger(ev, contracts, items, payments, files);
+  return new Ledger(ev, contracts, items, payments, files, contractFiles);
 }
 
 /** Every column except the file bytes. */
@@ -258,3 +268,15 @@ export async function refreshScheduleStatuses(tx: Tx, ev: EventRow, c: ContractR
     }
   }
 }
+
+/** Every contract_file column except the bytes. */
+export const CONTRACT_FILE_META = {
+  id: contractFile.id,
+  contractId: contractFile.contractId,
+  eventId: contractFile.eventId,
+  name: contractFile.name,
+  mime: contractFile.mime,
+  sizeBytes: contractFile.sizeBytes,
+  uploadedBy: contractFile.uploadedBy,
+  createdAt: contractFile.createdAt,
+};

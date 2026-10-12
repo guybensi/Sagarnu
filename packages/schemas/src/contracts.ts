@@ -128,3 +128,28 @@ export const paymentFileUploadSchema = z.object({
     }),
 });
 export type PaymentFileUploadInput = z.infer<typeof paymentFileUploadSchema>;
+
+/** The signed contract or the quote itself: PDF, Word or a photo of the pages. */
+export const CONTRACT_FILE_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+/** Scanned contracts run to several MB; photos are resized in the browser first. */
+export const CONTRACT_FILE_MAX_BYTES = 10 * 1024 * 1024;
+export const CONTRACT_FILES_PER_CONTRACT = 5;
+
+export const contractFileUploadSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  dataUrl: z
+    .string()
+    .max(Math.ceil((CONTRACT_FILE_MAX_BYTES * 4) / 3) + 128)
+    .regex(
+      /^data:(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)|image\/(jpeg|png|webp));base64,[A-Za-z0-9+/=]+$/,
+      { message: "invalid_file" },
+    ),
+});
+export type ContractFileUploadInput = z.infer<typeof contractFileUploadSchema>;

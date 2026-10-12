@@ -22,6 +22,22 @@ export function sniffFile(bytes: Buffer): FileMime | null {
   return sniffImage(bytes);
 }
 
+export type WordMime =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "application/msword";
+
+/** PDF, images, and Word: .docx is a ZIP holding word/document.xml, .doc an OLE compound file. */
+export function sniffContractFile(bytes: Buffer): FileMime | WordMime | null {
+  const known = sniffFile(bytes);
+  if (known) return known;
+  if (bytes.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])) && bytes.includes("word/")) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  if (bytes.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]))) {
+    return "application/msword";
+  }
+  return null;
+}
+
 /** Bytes of a `data:<mime>;base64,<payload>` URL. */
 export function decodeDataUrl(dataUrl: string): Buffer {
   return Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
