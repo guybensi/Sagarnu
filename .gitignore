@@ -20,3 +20,6 @@ e2e/playwright-report/
 datasets/contracts/examples/*
 !datasets/contracts/examples/.gitkeep
 datasets/**/*.pdf
+
+# Deep-research working notes (the final reports in reports/ are tracked).
+research_notes/
