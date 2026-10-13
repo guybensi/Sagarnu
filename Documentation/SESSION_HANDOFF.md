@@ -1,6 +1,6 @@
 # Sagarnu — session handoff
 
-Checkpoint written 2026-10-11 before `/compact`; updated 2026-10-11 (`453d9ce` → `cf1944a`) and 2026-10-13 (`bf15ac6` → `a4d698e`). Covers the work sessions of 2026-10-10 to 2026-10-12.
+Checkpoint written 2026-10-11 before `/compact`; updated 2026-10-11 (`453d9ce` → `cf1944a`), 2026-10-13 (`bf15ac6` → `a4d698e`) and again 2026-10-13 before `/compact` (`1634d21` → `f0816d1`: research, redesign plan, audit, skills, brand brief). Covers the work sessions of 2026-10-10 to 2026-10-13.
 
 **Legend:** ✅ verified in this session (tests, browser run, live HTTP check, or git) · ⚠️ assumption / not verified · 🔒 secret (name only, never the value).
 
@@ -11,6 +11,9 @@ Related docs (read these too, they are kept up to date):
 - `SETUP.txt` — Hebrew step-by-step deploy guide for the user (Railway → Vercel → Resend → Google → Groq → Meta).
 - `README.md` — dev quick start, layout table, live URL.
 - `datasets/contracts/README.md`, `datasets/contracts/SCHEMA_GAPS.md` — contract-extraction ground-truth dataset and schema gaps.
+- `CLAUDE.md` (repo root) — short project rules loaded automatically by every Claude Code session (Hebrew replies, he.ts, RTL, migrations, `pnpm check` + `pnpm e2e`, commit per module, Windows notes).
+- `docs/design/` — the redesign: `PLAN.md` (phases 0–5, one per session, with status checkboxes and ready prompts), `AUDIT.md` (phase 0 audit), `BRAND.md` (phase 1: three brand directions), `brand-preview.html` (visual comparison), `SKILLS.md` (installed skills, sources, pinned commits). Screenshots go to `docs/design/shots/` (git-ignored).
+- `reports/מיתוג מחדש ומקורות מחירי ספקים.md` — deep-research report (redesign skills + prompts; Israeli vendor price sources; price-estimation method). Its working notes in `research_notes/` are git-ignored.
 
 ---
 
@@ -146,6 +149,13 @@ Key web files: `components/shell/app-shell.tsx` (header, nav, event switcher, `U
 | `7e83e89`            | Google sign-in: error message on `/login`, "connect Google" in settings, `MeDto.hasGoogle`                                                                             |
 | `e907db2`            | contract file upload/view (`contract_file`, migration `0005`)                                                                                                          |
 | `a4d698e`            | Excel export of expenses (exceljs); Google button "בקרוב" unless `NEXT_PUBLIC_GOOGLE_PUBLIC=true`                                                                      |
+| `1634d21`            | docs: README + this handoff through `a4d698e`                                                                                                                          |
+| `fa9c114`            | FUTURE_WORK: §8 interactive planner contract review (comments + WhatsApp alerts, 7 tasks); new §9 "כמה זה אמור לעלות" (price estimation, ~65 tasks in phases A–H)      |
+| `7831c20`, `12016af` | deep-research report in `reports/`; `research_notes/` git-ignored                                                                                                      |
+| `8ae1046`            | `docs/design/PLAN.md` (redesign phases + prompts) and `CLAUDE.md`; `docs/design/shots/` git-ignored                                                                    |
+| `619995d`            | redesign phase 0: `docs/design/AUDIT.md` (38 screenshots, code scan, WCAG contrast, top 10 issues)                                                                     |
+| `fc31e6a`            | redesign skills vendored into `.claude/skills/` (Markdown only, pinned commits; `docs/design/SKILLS.md`); `.claude/skills/` in `.prettierignore`                       |
+| `f0816d1`            | redesign phase 1: `docs/design/BRAND.md` with directions A/B/C + `brand-preview.html`                                                                                  |
 
 User's own commits (FUTURE_WORK edits only): `d03c2f2`, `4dc4199`, `45b2d72`, `1363767`.
 
@@ -153,9 +163,17 @@ User's own commits (FUTURE_WORK edits only): `d03c2f2`, `4dc4199`, `45b2d72`, `1
 
 ## 4. Current task
 
-**Status: nothing in progress.** Stage 1 is done (except Apple, deferred, and domain-dependent items). All FUTURE_WORK §8 user notes so far are `[x]`, plus contract file upload and Excel export. Everything is committed, pushed, CI-green and deployed (`a4d698e`). The user is sending the site to friends for feedback.
+**Status: redesign phase 1 done, waiting for the user (Guy and Hagar) to choose a brand direction.** No application code changed since `a4d698e` (the live site is still that version); everything since is docs, research and skills, all committed and pushed (`f0816d1`).
 
-The user added a **"סגרנו" branding** item to FUTURE_WORK (slogan, "סגרנו צלם! 📸" toasts per category, "סגרנו חשבון" on the last payment, "סגרנו הכל!", signature in reminders) and asked to **leave it for later**.
+The redesign ("before stage 2", the user's request) follows `docs/design/PLAN.md`:
+
+- [x] Setup — skills vendored into `.claude/skills/` (not via `npx`/plugins; see `docs/design/SKILLS.md`): `frontend-design` (official), `redesign-existing-projects` (taste-skill), emilkowalski's `animate`, `animation-vocabulary`, `animation-performance`, `find-animation-opportunities`, `improve-animations`, `review-animations` (manual only: `/review-animations`), `ask-sonner`, and skills-il's `hebrew-rtl-best-practices`, `hebrew-tailwind-preset`. They load at session start.
+- [x] Phase 0 — `docs/design/AUDIT.md`. Top issues: no hierarchy around "how much is left" (countdown hero dominates), 6 failing contrast pairs (`muted` on canvas 4.34, `muted` on soft, success/warning on soft, `gold`, input borders `line` 1.26:1), **a real bidi bug** — `.num` (`direction: ltr`) wraps whole Hebrew sentences so ₪ jumps (`expenses/page.tsx:235` mobile "₪הבא: …", also `e/[eventId]/page.tsx:135` "עד …", `vendor-drawer.tsx:56` "נותר …"), three different ₪ formats, inverted scroll-row chevrons (`scroll-row.tsx:91-99`), `Select` without an arrow, identical SaaS cards / 8 radii / 5 shadows, Heebo + raspberry gradient + rings logo, 32–36px touch targets, no `reduced-motion`, no dark mode. The user was offered to fix the 3 small a11y/RTL bugs (select arrow, chevrons, ₪ bidi) before phase 1 or in phase 3 — **not answered yet**.
+- [x] Phase 1 — `docs/design/BRAND.md` + `brand-preview.html` (screenshot sent to the user). Directions: **A "חוזה ודיו"** (Frank Ruhl Libre + IBM Plex Sans Hebrew; cool paper, ink blue `#2A3D78`; memorable: a "סגרנו" rubber stamp on the vendor card), **B "זית ורימון"** (Playpen Sans Hebrew display + Rubik UI; olive `#4B5A27`, pomegranate `#8C1D52` decorative; handwritten "סגרנו!" with pomegranate seeds), **C "ערב ירוק-עד"** (Noto Serif Hebrew thin display + Noto Sans Hebrew; light UI with one evergreen `#12392C` "evening band", champagne foil line, payment timeline; denser, planner-oriented). All keep existing token names, add `line-strong` and `on-brand`, have light+dark hex/OKLCH, pass 4.5:1 text / 3:1 borders (checked by script). Fonts verified (Hebrew, ≥4 weights, tabular digits): **Assistant has proportional digits → not for amounts**; Secular One/Suez One/Bellefair single weight → out; Heebo not the brand voice.
+- [ ] Phase 2 — after the choice: tokens (keep names, change values), fonts via `next/font`, dev-only `/design-system` page, `.claude/skills/sagarnu-brand/SKILL.md` via skill-creator → stop for approval.
+- [ ] Phases 3–5 — components, motion ("סגרנו!" moments), pages one per session.
+
+The "סגרנו" branding item in FUTURE_WORK (slogan, per-category "סגרנו צלם! 📸" toasts, "סגרנו חשבון", "סגרנו הכל!") is now part of the redesign brief (the brand "moment").
 
 ---
 
@@ -167,7 +185,9 @@ From `Future/FUTURE_WORK.txt` (authoritative; re-read it — the user edits it):
    1. Sign in with Apple — deferred until the mobile app (stage 5).
    2. Change email address in settings (after the email domain exists).
 2. **Domain & email (before real users; the user waits for a final name):** buy domain → Vercel domain → update `WEB_ORIGIN` (Railway) and add the domain's origin + redirect URI in Google Clients → Resend domain (SPF, DKIM, DMARC) → `EMAIL_FROM=סגרנו <noreply@domain>` → **remove `REQUIRE_EMAIL_VERIFICATION`** so verification is required again → fill Google Branding (home page, privacy policy, terms, logo), **Publish** the Google app, set `NEXT_PUBLIC_GOOGLE_PUBLIC=true` in Vercel + Redeploy.
-3. **"סגרנו" branding** (FUTURE_WORK §8) — postponed by the user.
+3. **Redesign / rebrand** (`docs/design/PLAN.md`, before phase 2 AI) — waiting for the direction choice; then phases 2–5. Includes the "סגרנו" branding item.
+   3a. **FUTURE_WORK §8 interactive planner mode** (added 13/10): planner uploads a contract, the couple comments/approves, WhatsApp/email alert to the other side; 7 tasks (review status, `contract_comment`, notes tab, activity feed, alerts via phase 3, digest, tests).
+   3b. **FUTURE_WORK §9 "כמה זה אמור לעלות"** (added 13/10): expected cost per vendor for the couple's month/region/guests + self-balancing budget. Cold start from published Israeli ranges (d.co.il, Attending via Bizportal, zap via N12, Walla, Mit4Mit — quote with attribution, never scrape) as weak log-normal priors in `price_prior`, hierarchical shrinkage with own signed contracts, P25/P50/P75, show a cell only with ≥10 contracts from ≥5 vendors, explicit opt-in under Amendment 13, no vendor-facing benchmarks without legal review. Details in the research report.
 4. **Phase 2 — AI contract analysis** (see FUTURE_WORK §2, `docs/PLAN.txt` §6, `datasets/contracts/SCHEMA_GAPS.md`): R2 storage (also move cover photos, payment files and contract files from DB), `contract_analysis` table (`contract_file` + upload already exist), `apps/worker` (pg-boss), text extraction, OCR, Groq call using `Future/contract_extraction.schema.json`, review UI, `pnpm eval:contracts`, label 5–10 real contracts with `pnpm dataset:validate`. Decisions needed: category guess field, where to store confidence/warnings/raw_text, event-date mismatch warning, VAT normalization (plan Q7).
 5. **Phase 3 — reminders** (Resend + WhatsApp via Meta; user handles Meta Business setup).
 6. **Phase 4–5:** planner overview with per-event stats, restore deletes/audit UI, PDF export, PWA, billing, Expo app.
@@ -214,6 +234,8 @@ Plan open questions (§11) still unanswered by the user; defaults in use: neutra
 - Force-killing the dev servers (TaskStop / Stop-Process) is how local servers are stopped here; the DB is now outside OneDrive so this no longer corrupts it.
 - UI checks: `pnpm e2e` (Edge locally). For screenshots, drop a temporary `e2e/tests/zz-shots.spec.ts` that saves to the scratchpad, run `pnpm exec playwright test zz-shots` in `e2e/`, then delete it. OneDrive marks `apps/web/.next` folders read-only (EPERM on `next build`); `e2e/clean-next.mjs` clears them before the E2E build.
 - Railway logs: Deploy Logs search matches only the message text; use **Network Logs** (paths + status codes) to trace requests.
+- Third-party skills are vendored as Markdown at pinned commits (see `docs/design/SKILLS.md`), never installed with `npx skills` / hooks. Font checks: download the Google Fonts woff2 and inspect with fontTools (`pip install --target <scratch>/pylib fonttools brotli`).
+- Word export of a Markdown report: no pandoc/LibreOffice here; a small `docx` (npm) script in the scratchpad worked; Word COM automation hangs in the background — don't use it.
 
 ---
 
@@ -255,8 +277,9 @@ In production the API refuses to start without a real `DATABASE_URL` and `WEB_OR
 
 ## 9. Git status (✅ inspected 2026-10-13)
 
-- Branch: `main`, in sync with `origin/main`, working tree clean before this docs update; README and this file are committed together with it.
-- HEAD before this docs commit: `a4d698e feat: Excel export of expenses; Google sign-in shown as "coming soon"`.
+- Branch: `main`, in sync with `origin/main`, working tree clean before this docs update.
+- HEAD before this docs commit: `f0816d1 docs(design): phase 1 brand brief with three directions`. Live site (Railway/Vercel) still runs `a4d698e` code; later commits are docs/skills only.
+- Git-ignored working folders: `research_notes/`, `docs/design/shots/`.
 - Git-ignored local files: `apps/api/.env`, `apps/web/next-env.d.ts`, `*.tsbuildinfo`, `.data/`, `datasets/contracts/examples/*` (except `.gitkeep`), `datasets/**/*.pdf`.
 
 ---
@@ -264,7 +287,7 @@ In production the API refuses to start without a real `DATABASE_URL` and `WEB_OR
 ## 10. Next steps (how to continue)
 
 1. **Re-read** `Future/FUTURE_WORK.txt` (the user may have added items, especially in section 8) and this file. Don't redo anything marked `[x]`.
-2. **Ask the user which item to take next.** Expect feedback from friends using the site. Default proposal: phase 2 (AI contract analysis) once the user answers the open decisions (category guess, where confidence/warnings live, event-date mismatch warning, VAT normalization). Branding is postponed; domain/Google publish is the user's action (checklist in §5 item 2).
+2. **Ask which brand direction (A/B/C, or a combination with one memorable element) Guy and Hagar chose**, and whether to fix the 3 small a11y/RTL bugs from AUDIT now. Then run phase 2 from `docs/design/PLAN.md` (start a fresh session with the opening line there; Plan mode recommended). After the redesign: phase 2 AI contract analysis (open decisions: category guess, where confidence/warnings live, event-date mismatch warning, VAT normalization). Domain/Google publish remains the user's action (§5 item 2).
 3. **Local run** (PowerShell, after the PATH refresh above):
    ```
    pnpm install
