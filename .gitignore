@@ -23,3 +23,5 @@ datasets/**/*.pdf
 
 # Deep-research working notes (the final reports in reports/ are tracked).
 research_notes/
+# Redesign screenshots (docs/design/PLAN.md); only the written decisions are tracked.
+docs/design/shots/
