@@ -5,7 +5,7 @@
 
 ## סטטוס
 
-- [ ] הכנה: התקנת סקילים
+- [x] הכנה: התקנת סקילים (13/10/2026) ב-`.claude/skills/`, בגרסה קבועה. רשימה ומקורות ב-`docs/design/SKILLS.md`.
 - [x] שלב 0 – בדיקת המצב הקיים → `docs/design/AUDIT.md` (13/10/2026). 10 בעיות עיקריות: אין היררכיה סביב "כמה נשאר", ניגודיות שנכשלת ב-6 זוגות, באג bidi ב-`.num`, ₪ בשלוש צורות, גופן ופלטה גנריים. הסקילים עוד לא הותקנו, אז הבדיקה נעשתה לפי קובצי ה-SKILL.md שלהם.
 - [ ] שלב 1 – בריף מותג עם 3 כיוונים → `docs/design/BRAND.md` → **עצירה: גיא והגר בוחרים כיוון**
 - [ ] שלב 2 – tokens, גופנים, עמוד `/design-system` וסקיל `sagarnu-brand` → **עצירה: אישור העמוד**
@@ -32,9 +32,12 @@
 - **נגישות:** ניגודיות WCAG AA (לפחות 4.5:1 לטקסט), focus גלוי, וכיבוי תנועה ב-`prefers-reduced-motion`.
 - **צילומי מסך:** בלי להרים שרתים ידנית. יוצרים קובץ זמני `e2e/tests/zz-shots.spec.ts` שמשתמש ב-`signUp` ו-`seedEvent` מ-`e2e/tests/helpers.ts`, מריצים `pnpm exec playwright test zz-shots` מתוך `e2e/`, ומוחקים את הקובץ. הצילומים נשמרים ב-`docs/design/shots/` (התיקייה ב-.gitignore) ב-390px וב-1440px.
 - **commit לכל שלב** (ובשלב 5, לכל עמוד), אחרי `pnpm check` ו-`pnpm e2e`.
+- **כשסקיל סותר את התוכנית, PLAN.md ו-BRAND.md גוברים.** למשל גופנים לטיניים, glassmorphism או תמונות picsum מ-`redesign-existing-projects`. ראו `docs/design/SKILLS.md`.
 - **לא מתקינים** סקילים שמריצים hooks, מורידים קבצים בינאריים או שולחים טלמטריה (למשל impeccable). לא מפעילים כמה סקילי "טעם" ביחד, כי הכללים שלהם סותרים.
 
 ## הכנה (פעם אחת, לפני שלב 0)
+
+**בוצע.** הסקילים הועתקו ל-`.claude/skills/` בגרסה קבועה, בלי להריץ התקנות של צד שלישי. פירוט ב-`docs/design/SKILLS.md`. הפקודות המקוריות נשארות כאן לתיעוד:
 
 ```
 /plugin install frontend-design@claude-plugins-official      ← scope: project
@@ -131,7 +134,7 @@ focus) וצלם כל מצב בעמוד /design-system.
 השתמש ב-find-animation-opportunities ואז ב-animate. הצע לכל היותר רגע מתוזמר אחד לכל עמוד, ואת
 האנימציות של "סגרנו!" (ספק חדש / תשלום אחרון / סגרנו הכל). כתוב גם מה לא להנפיש.
 קודם CSS. אם צריך ספרייה, motion, ורק אחרי שתסביר למה. ערכי x מוכפלים בכיוון (RTL = -1).
-הכל כבוי ב-prefers-reduced-motion. בסוף הרץ review-animations.
+הכל כבוי ב-prefers-reduced-motion. בסוף עצור, כדי שאריץ /review-animations (הוא רץ רק ידנית).
 ```
 
 ## שלב 5 – עמודים
