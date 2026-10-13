@@ -8,11 +8,11 @@ Sagarnu – Wedding budget manager for couples and planners: AI-powered vendor c
 
 ## Features (implemented)
 
-- **Auth:** sign-up as couple or planner, login with "remember me" (off = 24-hour non-renewing session), forgot/reset password, password policy. Login and password reset are limited to 5 attempts a minute per IP and per email (429 + `Retry-After`).
-- **Onboarding questionnaire** and **dashboard**: countdown, cover photo, next payment, overdue items, budget bar, missing categories.
-- **Contracts:** open locked, "עריכה" unlocks and saves everything at once; payment schedules by fixed date or "X days before/after the event / after signing", with the resolved date shown live under each row.
-- **Payments:** mark installments paid, attach receipt / transfer-confirmation files (PDF/images ≤5MB).
-- **Expenses** table and budget status.
+- **Auth:** sign-up as couple or planner, login with "remember me" (off = 24-hour non-renewing session), forgot/reset password, password policy. Login and password reset are limited to 5 attempts a minute per IP and per email (429 + `Retry-After`). **Google sign-in** is configured (Google app in Testing: shown as "בקרוב" to everyone until it is published; existing accounts connect Google from settings).
+- **Onboarding questionnaire** and **dashboard**: countdown, cover photo, next payment, overdue items, budget bar, missing categories. Each partner is a groom or a bride (any combination), and the questionnaire asks where most payments come from.
+- **Contracts:** open locked, "עריכה" unlocks and saves everything at once; payment schedules by fixed date or "X days before/after the event / after signing", with the resolved date shown live under each row. **Contract files** (PDF/Word/image ≤10MB, up to 5) with "צפייה בחוזה".
+- **Payments:** mark installments paid, attach receipt / transfer-confirmation files (PDF/images ≤5MB), **who paid** (each partner's account by name, joint, either side's parents, or someone else by name).
+- **Expenses** table and budget status, **filter by who paid**, and **Excel export** (RTL .xlsx: expenses + every payment; follows the filter).
 - **Planner mode & sharing:** planners manage many events (`/events`); invite the couple by email or one-time link (7 days, WhatsApp share), roles owner/editor/viewer, member management.
 - **Account settings** (`/settings`): profile, account type, phone + WhatsApp consent, password change, signed-in devices (sign out one/all others), JSON data export and account deletion (privacy law, amendment 13).
 
@@ -20,11 +20,11 @@ Roadmap and open items: [Future/FUTURE_WORK.txt](Future/FUTURE_WORK.txt) · Sess
 
 ## Deployment
 
-| Service | Where                                                             | Notes                                                                                 |
-| ------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Web     | Vercel — [sagarnu-bay.vercel.app](https://sagarnu-bay.vercel.app) | Root directory `apps/web`; env `API_URL` = the Railway API URL                        |
-| API     | Railway (config: `apps/api/railway.json`)                         | env `WEB_ORIGIN=https://sagarnu-bay.vercel.app`, `DATABASE_URL`, `BETTER_AUTH_SECRET` |
-| DB      | Railway Postgres                                                  | `DATABASE_URL=${{Postgres.DATABASE_URL}}`; migrations run on API boot                 |
+| Service | Where                                                             | Notes                                                                                                                     |
+| ------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Web     | Vercel — [sagarnu-bay.vercel.app](https://sagarnu-bay.vercel.app) | Root directory `apps/web`; env `API_URL` = the Railway API URL, `NEXT_PUBLIC_GOOGLE_ENABLED`, `NEXT_PUBLIC_GOOGLE_PUBLIC` |
+| API     | Railway (config: `apps/api/railway.json`)                         | env `WEB_ORIGIN=https://sagarnu-bay.vercel.app`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID/SECRET`          |
+| DB      | Railway Postgres                                                  | `DATABASE_URL=${{Postgres.DATABASE_URL}}`; migrations run on API boot                                                     |
 
 ## Quick start
 

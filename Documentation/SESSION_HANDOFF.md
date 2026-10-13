@@ -1,6 +1,6 @@
 # Sagarnu — session handoff
 
-Checkpoint written 2026-10-11 before `/compact`, updated later on 2026-10-11 after commits `453d9ce` → `cf1944a`. Covers the work sessions of 2026-10-10 and 2026-10-11.
+Checkpoint written 2026-10-11 before `/compact`; updated 2026-10-11 (`453d9ce` → `cf1944a`) and 2026-10-13 (`bf15ac6` → `a4d698e`). Covers the work sessions of 2026-10-10 to 2026-10-12.
 
 **Legend:** ✅ verified in this session (tests, browser run, live HTTP check, or git) · ⚠️ assumption / not verified · 🔒 secret (name only, never the value).
 
@@ -40,8 +40,9 @@ Browser ──► Vercel (Next.js web, UI only) ──/v1/* rewrite──► Rai
 | API      | Fastify 5, Better Auth 1.7 (Drizzle adapter, email+password, Google optional), Zod 4, tsup bundle                                                               |
 | DB       | PostgreSQL (Railway) via Drizzle ORM 0.45 + drizzle-kit; **PGlite** (embedded Postgres) for local dev and tests                                                 |
 | Email    | Resend via `fetch` (`packages/notifications`); console fallback when no key                                                                                     |
-| Tests    | Vitest 5 (unit + API integration on in-memory PGlite); Playwright-core + system Edge used ad hoc from the scratchpad (not in repo)                              |
-| CI       | GitHub Actions `.github/workflows/ci.yml`: frozen install → format:check → lint → typecheck → test                                                              |
+| Tests    | Vitest 5 (unit + API integration on in-memory PGlite); Playwright 1.64 E2E in `e2e/` (`pnpm e2e`; local Edge, CI Chromium)                                      |
+| CI       | GitHub Actions `.github/workflows/ci.yml`: job `check` (frozen install → format:check → lint → typecheck → test) + job `e2e`                                    |
+| Excel    | exceljs 4.4 (API only) for the expenses export                                                                                                                  |
 
 ### Repository structure
 
@@ -57,6 +58,7 @@ packages/
   db/         Drizzle schema, SQL migrations (drizzle/), seed, createDb (Postgres | PGlite)  [server-only]
   notifications/ email provider (Resend/console) + RTL templates                       [server-only]
   config/     shared tsconfig
+e2e/          @sagarnu/e2e — Playwright config (own ports 3100/8180, in-memory DB), specs, clean-next.mjs
 datasets/     @sagarnu/datasets — contract ground-truth template, docs, validator (not deployed)
 Future/       FUTURE_WORK.txt roadmap + contract_extraction.schema.json (phase-2 design)
 docs/PLAN.txt approved plan
@@ -64,11 +66,11 @@ SETUP.txt     Hebrew deploy guide
 Documentation/SESSION_HANDOFF.md  this file
 ```
 
-Key API files: `apps/api/src/app.ts` (route registration, auth handler, health), `env.ts` (env validation), `auth.ts` (Better Auth config + password-policy hook), `lib/access.ts` (`eventAccess` → 404 for non-members), `services/ledger.ts` (loads contracts/schedule/payments/files, computes DTOs), `routes/{me,events,contracts,cover,payment-files,invitations}.ts`, `lib/auth-limits.ts` (5/min login & reset limiter).
+Key API files: `apps/api/src/app.ts` (route registration, auth handler, health), `env.ts` (env validation), `auth.ts` (Better Auth config + password-policy hook), `lib/access.ts` (`eventAccess` → 404 for non-members), `services/ledger.ts` (loads contracts/schedule/payments/files, computes DTOs), `routes/{me,events,contracts,cover,payment-files,contract-files,expenses-export,invitations}.ts`, `lib/auth-limits.ts` (5/min login & reset limiter), `lib/files.ts` (type sniffing from bytes, incl. Word).
 
-UI text: every user-facing string is in `packages/i18n/src/he.ts`, grouped by screen; an ESLint rule rejects Hebrew literals in `apps/web/src`. E2E: `e2e/` (Playwright, `pnpm e2e`, separate CI job).
+UI text: every user-facing string is in `packages/i18n/src/he.ts`, grouped by screen; an ESLint rule rejects Hebrew literals in `apps/web/src`. Name/payer labels: `packages/i18n/src/people.ts` (`partnerName`, `payerLabels`, `payerLabel`). E2E: `e2e/` (Playwright, `pnpm e2e`, separate CI job).
 
-Key web files: `components/shell/app-shell.tsx` (header, nav, event switcher, `UserMenu`), `components/contracts/contract-dialog.tsx` (view/edit contract form), `components/contracts/vendor-drawer.tsx` (side panel), `components/payments/*`, `app/e/[eventId]/*` pages, `app/events/page.tsx`, `app/(auth)/*` incl. `invite/[token]`, `app/settings/page.tsx` + `components/settings/*` (profile, password, sessions, data cards), `components/shell/plain-shell.tsx` (header shared by `/events` and `/settings`).
+Key web files: `components/shell/app-shell.tsx` (header, nav, event switcher, `UserMenu`), `components/contracts/contract-dialog.tsx` (view/edit contract form), `components/contracts/vendor-drawer.tsx` (side panel), `components/payments/*`, `app/e/[eventId]/*` pages, `app/events/page.tsx`, `app/(auth)/*` incl. `invite/[token]`, `app/settings/page.tsx` + `components/settings/*` (profile, password, sessions, data cards), `components/shell/plain-shell.tsx` (header shared by `/events` and `/settings`), `components/settings/google-card.tsx`, `components/contracts/contract-files.tsx`, `components/payments/payer-picker.tsx`, `lib/auth-client.ts` (`googleEnabled`, `googlePublic` flags).
 
 ---
 
@@ -76,30 +78,32 @@ Key web files: `components/shell/app-shell.tsx` (header, nav, event switcher, `U
 
 ### Implemented and verified ✅
 
-- **Auth:** sign-up (couple/planner), login with "remember me", forgot/reset password, verify-email page, show/hide password, Hebrew error messages (wrong credentials → link to sign-up with email prefilled; weak password → unmet rules in red; server down → "השרת לא זמין"), `?next=` return path (same-site only, `lib/next-path.ts`). Password policy (8+ chars, A–Z, digit, special) enforced client and server. **Rate limit:** sign-in, request-password-reset and reset-password limited to 5/min per IP **and** per email (in-memory counter, 429 + `Retry-After`, web shows "יותר מדי ניסיונות"). **"Remember me" off** → 24-hour non-renewing session (Better Auth already did this; now pinned by a test).
+- **Auth:** sign-up (couple/planner), login with "remember me", forgot/reset password, verify-email page, show/hide password, Hebrew error messages (wrong credentials → link to sign-up with email prefilled; weak password → unmet rules in red; server down → "השרת לא זמין"), `?next=` return path (same-site only, `lib/next-path.ts`). Password policy (8+ chars, A–Z, digit, special) enforced client and server. **Rate limit:** sign-in, request-password-reset and reset-password limited to 5/min per IP **and** per email (in-memory counter, 429 + `Retry-After`, web shows "יותר מדי ניסיונות"). **"Remember me" off** → 24-hour non-renewing session (Better Auth already did this; now pinned by a test). Login/sign-up refresh the cached session before navigating (fixed: logging in again after a logout in the same tab bounced back to `/login`).
+- **Google sign-in** (✅ live, 2026-10-12): Google Cloud project "Sagarnu", OAuth client with redirect `https://sagarnu-bay.vercel.app/v1/auth/callback/google` (+ localhost:3000); app in **Testing** mode with test users Guy and Hagar. Better Auth refuses to auto-link Google to an existing password account whose email is unverified (`requireLocalEmailVerified`, anti-takeover) → `/login?error=account_not_linked` now shows a Hebrew explanation, and `/settings` has "חיבור חשבון Google" (`linkSocial`; `MeDto.hasGoogle`). Guy linked his account and signed in with Google ✅. Because only test users can use it, the button is shown **disabled with "בקרוב"** unless `NEXT_PUBLIC_GOOGLE_PUBLIC=true` (not set); the settings card shows only to already-linked accounts.
 - **Account settings** (`/settings`, user menu → "הגדרות החשבון"): name, account type (couple/planner), phone (normalized to international format in `@sagarnu/domain` `phone.ts`) + WhatsApp consent with date (needs a phone; removing it withdraws consent), change password (optionally sign out other devices), signed-in devices list (sign out one / all others), JSON data export (`GET /v1/me/export`, no file contents or secrets), account deletion (`DELETE /v1/me`, password required; solo events deleted, shared events stay with members; refused while sole owner of a shared event; the user's sent invitations are deleted). Migration `0003_account_deletion`: `event.created_by` nullable, `ON DELETE SET NULL`. Not yet: changing the email address (needs a real email domain).
-- **Onboarding questionnaire** (`/onboarding`): date/time ("לא ידוע עדיין" per field), noon/evening **derived from start time** (<17:00 = noon; server enforces), guests, budget, place, names, style (`hall, garden, outdoor=שטח, home=בית, festival=פסטיבל (לינה), restaurant, other`), kashrut, ceremony, relevant categories + **custom categories**.
+- **Onboarding questionnaire** (`/onboarding`): date/time ("לא ידוע עדיין" per field), noon/evening **derived from start time** (<17:00 = noon; server enforces), guests, budget, place, names, style (`hall, garden, outdoor=שטח, home=בית, festival=פסטיבל (לינה), restaurant, other`), kashrut, ceremony, relevant categories + **custom categories**. **People step:** each partner has a name + **groom/bride** chips (`partner1Role`/`partner2Role`, any combination); field labels follow ("שם החתן", "שם הכלה הראשונה"…), plus **"מאיפה ייצאו רוב התשלומים?"** (`defaultPayer` + `defaultPayerName`). Same fields in event details. Migration `0004_payers_and_partner_roles`.
 - **Dashboard** (`/e/[id]`): countdown in **calendar days only**, personal **cover photo** (resized client-side to 1600px JPEG, stored in DB), next payment, overdue list, budget bar, vendor counts, missing categories, event details.
-- **Contracts** (`/e/[id]/contracts`): category tabs with visible scrollbar/arrows (`ScrollRow`), contract cards. Clicking a card opens the **contract form locked ("צפייה בלבד")**; "עריכה" unlocks; "ביטול" reverts; "שמירה" saves fields → schedule diff (add/update/remove pending items) → status (confirmation when leaving "approved"). Paid/cancelled items locked. Error summary next to Save listing every invalid field (clickable). Links get `https://` auto-prefixed. Fields include ח.פ/ע.מ and "days after the event". Schedule rows with a relative timing (days before/after the event, after signing) show the **resolved date** under the row, update when the anchor date changes, flag a date already passed, and explain when the anchor date is missing.
-- **Vendor drawer** (side panel): status badge (read-only), installments with "סמן כשולם", payment history with **attached files** (receipt/confirmation), attach later, delete; "עריכה" opens the form in edit mode.
-- **Payments:** payment dialog with link **or file upload** per kind (PDF/JPG/PNG/WebP ≤5MB, images resized to JPEG and renamed `.jpg`), overpay confirmation, "next payment" prompt.
-- **Expenses** (`/e/[id]/expenses`): totals tiles, table (cards on mobile), numbers right-aligned.
+- **Contracts** (`/e/[id]/contracts`): category tabs with visible scrollbar/arrows (`ScrollRow`), contract cards. Clicking a card opens the **contract form locked ("צפייה בלבד")**; "עריכה" unlocks; "ביטול" reverts; "שמירה" saves fields → schedule diff (add/update/remove pending items) → status (confirmation when leaving "approved"). Paid/cancelled items locked. Error summary next to Save listing every invalid field (clickable). Links get `https://` auto-prefixed. Fields include ח.פ/ע.מ and "days after the event". Schedule rows with a relative timing (days before/after the event, after signing) show the **resolved date** under the row, update when the anchor date changes, flag a date already passed, and explain when the anchor date is missing. **Contract files:** under "קישור לחוזה" upload PDF/Word/image (≤10MB, ≤5 per contract; table `contract_file`, migration `0005_contract_files`; routes `POST /contracts/:id/files`, `GET|DELETE /contract-files/:fileId`; PDFs/images inline in a sandbox, Word downloads). New contracts upload picked files right after creation. "צפייה בחוזה" in view mode.
+- **Vendor drawer** (side panel): status badge (read-only), installments with "סמן כשולם", payment history with **attached files** (receipt/confirmation), attach later, delete, **who paid** (clickable for editors to change); links to the contract URL and each uploaded contract file; "עריכה" opens the form in edit mode.
+- **Payments:** payment dialog with link **or file upload** per kind (PDF/JPG/PNG/WebP ≤5MB, images resized to JPEG and renamed `.jpg`), **"מי שילם"** (`payer`: partner1/partner2/joint/partner1_parents/partner2_parents/other + `payerName`; labels use the couple's names; defaults to the event's `defaultPayer`; older payments = null → "לא צוין"), overpay confirmation, "next payment" prompt.
+- **Expenses** (`/e/[id]/expenses`): totals tiles, table (cards on mobile), numbers right-aligned, **"מי שילם" filter** chips with each payer's total (`ExpensesDto.paidBy`, per row `paidBy`, `totalsByPayer` in domain), **"ייצוא לאקסל"** → `GET /expenses/export[?payer=<payerKey>]`: RTL .xlsx, sheets "הוצאות" (approved vendors + SUM row) and "תשלומים" (every payment with method, payer, installment, contract status).
 - **Event details** (`/e/[id]/details`), delete event.
 - **Planner mode + sharing:** planners land on **"האירועים שלי"** (`/events`); after creating an event → `/e/[id]/members?invite=1`. Sharing screen: invite by email + role (editor/viewer), one-time link (7 days) with copy + WhatsApp, pending invitations with cancel, change roles, remove members, leave event, last-owner protection. `/invite/[token]` public preview → sign up/log in → join.
-- **Test suite** (✅ all green locally and in CI on `cf1944a`): domain 27, schemas 11, i18n 4, db 1, api 34, datasets 8 tests.
-- **Browser runs** (✅ headless Edge via playwright-core, scratchpad scripts, local stack): full UI flow desktop+mobile, auth errors, contract validation summary, tab scroll row, contract view/edit modes, payment files, number alignment, planner + partner invitation flow (two browser contexts). Screenshots were reviewed.
+- **Test suite** (✅ all green locally and in CI on `a4d698e`): domain 28, schemas 11, i18n 6, db 1, api 42, datasets 8 tests; **E2E 10 specs** (sign-up + questionnaire incl. groom/bride, logout/login, Google error message, auth redirect, contract + payment, contract view/edit, contract file upload, phone-width layout, payer flow + Excel download, settings incl. account deletion, planner↔couple sharing).
+- **Screenshots reviewed** (desktop + 390px) for the new screens: people step, payer picker, vendor drawer payer, expenses filter, contract files.
 
 ### Deployed and verified live ✅
 
-- Railway runs **`cf1944a`** (`GET /v1/health` → `{"ok":true,"commit":"cf1944a"}`, ✅ checked 2026-10-11); migrations `0000`–`0003` applied (server boots only after migrating; `0001` features and the file/invitation routes answered correctly live).
+- Railway runs **`a4d698e`** (`GET /v1/health` → `{"ok":true,"commit":"a4d698e"}`, ✅ checked 2026-10-12); migrations `0000`–`0005` applied (server boots only after migrating). Vercel deployment of `a4d698e` completed (GitHub commit status) and the login page shows Google as "בקרוב" ✅.
+- Google OAuth on the live site ✅: redirect reaches Google with the right `redirect_uri`; Guy linked Google in settings and signed in with it.
 - Live smoke tests (2026-10-11): sign-up, festival style, derived noon, custom category, cover photo upload/serve, link-with-spaces rejected (422), invitation route (404 for fake token), payment-file route (401 without session).
 - Resend in **testing mode**: a password-reset email to the account owner's address arrived (in spam).
 
 ### Not verified ⚠️
 
 - The invitation and payment-file features were clicked through only locally; on the live site only route-level HTTP checks were done.
-- Google sign-in is wired but not configured/tested (no `GOOGLE_CLIENT_ID` set as far as known).
-- Settings screen, account deletion/export and the rate limiter were not smoke-tested on the live site (deploy itself verified via `/v1/health`).
+- Settings screen, account deletion/export, the rate limiter, payer/roles, contract files and the Excel export were not smoke-tested on the live site (deploy verified via `/v1/health`; covered by local API + E2E tests).
+- The .xlsx was checked by reading it back in tests (values, RTL, filter), not opened in real Excel.
 
 ---
 
@@ -134,6 +138,14 @@ Key web files: `components/shell/app-shell.tsx` (header, nav, event switcher, `U
 | `0daf53d`            | API: 5/min limit on login + password reset per IP and email; test pins 24h session without "remember me"                                                               |
 | `c733265`            | API: `PATCH /v1/me`, `/v1/me/sessions`, `/v1/me/export`, `DELETE /v1/me`; phone normalization; migration `0003_account_deletion`                                       |
 | `cf1944a`            | web: `/settings` account settings screen, `PlainShell`                                                                                                                 |
+| `1c53e6a`            | docs: README features + this handoff committed                                                                                                                         |
+| `bf15ac6`            | fix(web): re-login after logout in the same tab no longer bounces to `/login` (refresh session before navigating)                                                      |
+| `4c55b5a`, `5cd2bad` | Playwright E2E in repo + CI job; `RATE_LIMITS=false` env for E2E (refused in production); OneDrive read-only `.next` cleanup before the E2E build                      |
+| `e3177d9`            | all UI text moved to `he.ts`; ESLint rule against Hebrew literals in `apps/web/src`                                                                                    |
+| `5f5862f`, `4949301` | partner roles (groom/bride) + who paid (`payer`), migration `0004`, expenses payer filter (FUTURE_WORK §8 items 7–8)                                                   |
+| `7e83e89`            | Google sign-in: error message on `/login`, "connect Google" in settings, `MeDto.hasGoogle`                                                                             |
+| `e907db2`            | contract file upload/view (`contract_file`, migration `0005`)                                                                                                          |
+| `a4d698e`            | Excel export of expenses (exceljs); Google button "בקרוב" unless `NEXT_PUBLIC_GOOGLE_PUBLIC=true`                                                                      |
 
 User's own commits (FUTURE_WORK edits only): `d03c2f2`, `4dc4199`, `45b2d72`, `1363767`.
 
@@ -141,7 +153,9 @@ User's own commits (FUTURE_WORK edits only): `d03c2f2`, `4dc4199`, `45b2d72`, `1
 
 ## 4. Current task
 
-**Status: nothing in progress.** All 6 items of FUTURE_WORK section 8 (user notes) are done and marked `[x]`. Stage 1 leftovers settings screen, "remember me" 24h and rate limits are also done (`453d9ce` → `cf1944a`), committed, pushed, CI-green and deployed (`cf1944a`).
+**Status: nothing in progress.** Stage 1 is done (except Apple, deferred, and domain-dependent items). All FUTURE_WORK §8 user notes so far are `[x]`, plus contract file upload and Excel export. Everything is committed, pushed, CI-green and deployed (`a4d698e`). The user is sending the site to friends for feedback.
+
+The user added a **"סגרנו" branding** item to FUTURE_WORK (slogan, "סגרנו צלם! 📸" toasts per category, "סגרנו חשבון" on the last payment, "סגרנו הכל!", signature in reminders) and asked to **leave it for later**.
 
 ---
 
@@ -151,13 +165,13 @@ From `Future/FUTURE_WORK.txt` (authoritative; re-read it — the user edits it):
 
 1. **Stage 1 leftovers** (all done except:)
    1. Sign in with Apple — deferred until the mobile app (stage 5).
-   2. Google sign-in — code ready, free; waiting for the final domain (redirect URI + consent screen name).
-   3. Change email address in settings (after the email domain exists).
-2. **Domain & email (before real users):** buy domain → Vercel domain → update `WEB_ORIGIN` (Railway) and Google redirect URI → Resend domain (SPF, DKIM, DMARC) → `EMAIL_FROM=סגרנו <noreply@domain>` → **remove `REQUIRE_EMAIL_VERIFICATION`** so verification is required again.
-3. **Phase 2 — AI contract analysis** (see FUTURE_WORK §2, `docs/PLAN.txt` §6, `datasets/contracts/SCHEMA_GAPS.md`): R2 storage (also move cover photos + payment files from DB), `contract_file`/`contract_analysis` tables, upload endpoint, `apps/worker` (pg-boss), text extraction, OCR, Groq call using `Future/contract_extraction.schema.json`, review UI, `pnpm eval:contracts`, label 5–10 real contracts with `pnpm dataset:validate`. Decisions needed: category guess field, where to store confidence/warnings/raw_text, event-date mismatch warning, VAT normalization (plan Q7).
-4. **Phase 3 — reminders** (Resend + WhatsApp via Meta; user handles Meta Business setup).
-5. **Phase 4–5:** planner overview with per-event stats, restore deletes/audit UI, exports, PWA, billing, Expo app.
-6. **Infra:** Sentry, Postgres backups (pg_dump → R2), Vercel Pro when commercial.
+   2. Change email address in settings (after the email domain exists).
+2. **Domain & email (before real users; the user waits for a final name):** buy domain → Vercel domain → update `WEB_ORIGIN` (Railway) and add the domain's origin + redirect URI in Google Clients → Resend domain (SPF, DKIM, DMARC) → `EMAIL_FROM=סגרנו <noreply@domain>` → **remove `REQUIRE_EMAIL_VERIFICATION`** so verification is required again → fill Google Branding (home page, privacy policy, terms, logo), **Publish** the Google app, set `NEXT_PUBLIC_GOOGLE_PUBLIC=true` in Vercel + Redeploy.
+3. **"סגרנו" branding** (FUTURE_WORK §8) — postponed by the user.
+4. **Phase 2 — AI contract analysis** (see FUTURE_WORK §2, `docs/PLAN.txt` §6, `datasets/contracts/SCHEMA_GAPS.md`): R2 storage (also move cover photos, payment files and contract files from DB), `contract_analysis` table (`contract_file` + upload already exist), `apps/worker` (pg-boss), text extraction, OCR, Groq call using `Future/contract_extraction.schema.json`, review UI, `pnpm eval:contracts`, label 5–10 real contracts with `pnpm dataset:validate`. Decisions needed: category guess field, where to store confidence/warnings/raw_text, event-date mismatch warning, VAT normalization (plan Q7).
+5. **Phase 3 — reminders** (Resend + WhatsApp via Meta; user handles Meta Business setup).
+6. **Phase 4–5:** planner overview with per-event stats, restore deletes/audit UI, PDF export, PWA, billing, Expo app.
+7. **Infra:** Sentry, Postgres backups (pg_dump → R2), Vercel Pro when commercial.
 
 Plan open questions (§11) still unanswered by the user; defaults in use: neutral wording ("יש לשלם"), 09:00 send hour, VAT shown as in contract (`vatMode`); Shabbat/holiday skipping undecided.
 
@@ -170,7 +184,9 @@ Plan open questions (§11) still unanswered by the user; defaults in use: neutra
 - DB host **Railway Postgres**, not Neon (API + worker on Railway; pg-boss keeps a connection open).
 - **No Docker** (user's request). Local dev uses embedded **PGlite**: `DATABASE_URL=pglite:local` → `%LOCALAPPDATA%\sagarnu\pglite-dev` (outside the repo **because the repo is under OneDrive**, which turns data files into ReparsePoint placeholders and breaks PGlite — "PGlite failed to initialize properly"). `pglite:memory` for tests.
 - **Proxy architecture** (web rewrites `/v1/*` to the API) so cookies work without a shared custom domain.
-- Files (cover photo `event_cover_photo`, payment files `payment_file`) stored as **bytea in Postgres** until R2 exists (phase 2). File type sniffed from bytes; served with sandbox CSP.
+- Files (cover photo `event_cover_photo`, payment files `payment_file`, contract files `contract_file`) stored as **bytea in Postgres** until R2 exists (phase 2). File type sniffed from bytes; served with sandbox CSP.
+- **Google linking safeguard kept on** (Better Auth `requireLocalEmailVerified`): existing unverified password accounts connect Google from settings instead of implicit linking.
+- **Payer labels use the couple's names**, not groom/bride (works for every couple type); "other" takes a free-text name. Existing payments stay "לא צוין" (user's choice) and can be changed in the vendor drawer.
 - Ground-truth dataset targets the **implemented** `createContractSchema` (minus user-entered fields), not the planned LLM output; mapping in `SCHEMA_GAPS.md`.
 
 **Product rules implemented:**
@@ -194,21 +210,23 @@ Plan open questions (§11) still unanswered by the user; defaults in use: neutra
   `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`.
   In Git Bash the global pnpm shim resolves to a broken path.
 - PowerShell 5.1 mangles `"` in native args → commit with `git commit -F -` (Bash heredoc) or `-F file`. `Set-Content -Encoding utf8` writes a BOM — avoid for source.
-- Inserting code through `node -e '…'`/sed in Bash strips backslashes (regexes, `\u` escapes, Windows paths) and drops literal invisible characters — use the Edit/Write tools or a `.cjs` script file in the scratchpad.
+- Inserting code through `node -e '…'`/sed in Bash strips backslashes (regexes, `\u` escapes, Windows paths) and drops literal invisible characters — use the Edit/Write tools or a `.py`/`.cjs` script file in the scratchpad. Long Bash heredocs with mixed quotes sometimes fail to parse in this tool ("unexpected EOF"); write the file with the Write tool instead. Python on Windows writes CRLF unless `newline=""`.
 - Force-killing the dev servers (TaskStop / Stop-Process) is how local servers are stopped here; the DB is now outside OneDrive so this no longer corrupts it.
-- UI checks: playwright-core with `channel: "msedge"` from the scratchpad (`…/scratchpad/pw/*.mjs`, helpers in `seed.mjs`); hide `nextjs-portal` (dev badge) and pass `ignoreDefaultArgs: ["--hide-scrollbars"]` when measuring scrollbars. Scratchpad files are not part of the repo and may be gone after the session.
+- UI checks: `pnpm e2e` (Edge locally). For screenshots, drop a temporary `e2e/tests/zz-shots.spec.ts` that saves to the scratchpad, run `pnpm exec playwright test zz-shots` in `e2e/`, then delete it. OneDrive marks `apps/web/.next` folders read-only (EPERM on `next build`); `e2e/clean-next.mjs` clears them before the E2E build.
+- Railway logs: Deploy Logs search matches only the message text; use **Network Logs** (paths + status codes) to trace requests.
 
 ---
 
 ## 7. Known issues, risks, open questions
 
 - **Email deliverability:** Resend has no verified domain → it only delivers to the Resend account owner and lands in spam. Railway therefore has `REQUIRE_EMAIL_VERIFICATION=false` (otherwise new users would be stuck at sign-up). Invitation emails to other people fail silently on the server (`emailSent: false`, UI tells the owner to share the link). Real users who forget their password cannot get a reset link yet.
-- **Files in Postgres:** fine for now, but receipts/photos grow the DB; must move to R2 (phase 2).
+- **Files in Postgres:** fine for now, but receipts/photos/contracts (up to 10MB each) grow the DB; must move to R2 (phase 2).
+- **Google app in Testing:** only Guy and Hagar (test users) can sign in with Google; everyone else sees "בקרוב". Publishing needs the Branding tab completed (Google refused to publish without it).
 - **Auth rate-limit counters are in memory** (`apps/api/src/lib/auth-limits.ts`) — fine for one API instance; move to Postgres/Redis when scaling out.
-- **No automated E2E in CI**; browser checks were manual/ad hoc.
 - `event_invitation.invited_by` still references `user` without `ON DELETE`; account deletion handles it by deleting the user's sent invitations first (`routes/me.ts`). Any other user-deletion path must do the same.
 - Planner overview has no per-event financial stats yet (cards show date, place, guests, days left only).
-- `/v1/auth/*` is proxied by building a Fetch `Request` from Fastify; works for GET/POST JSON. ⚠️ Not exercised for OAuth callbacks (Google not configured).
+- `/v1/auth/*` is proxied by building a Fetch `Request` from Fastify; works for GET/POST JSON and the Google OAuth callback ✅.
+- Local E2E occasionally hits a one-off `ECONNRESET` or a slow API test under `pnpm check` load; a rerun passes.
 - Test users may remain in production DB from smoke tests: `smoke-test-1791628611271@example.com`, `smoke-test-1791704310803@example.com`, `smoke-test-1791705832098@example.com` — the user reported deleting them (FUTURE_WORK edits `45b2d72` and the removed line); ⚠️ not re-verified.
 - Next.js 16 note: `text-align: match-parent` is resolved by Chromium against the element's own direction — don't use it for `.num`.
 
@@ -222,12 +240,12 @@ Plan open questions (§11) still unanswered by the user; defaults in use: neutra
 | **Railway**        | API service "Sagarnu" + "Postgres" (volume `postgres-volume`), project "jubilant-elegance", env "production" | Config as code `/apps/api/railway.json` (Railpack build `pnpm --filter @sagarnu/api build`, start `pnpm --filter @sagarnu/api start`, healthcheck `/v1/health`). **Auto deploy was disabled on `main`; the user enabled it on 2026-10-11** — verified working (`a2db300` deployed within ~1 min). Migrations + seed run on boot (`MIGRATE_ON_START` default true). |
 | **Postgres**       | Railway Postgres                                                                                             | `DATABASE_URL=${{Postgres.DATABASE_URL}}` on the API service                                                                                                                                                                                                                                                                                                       |
 | **Resend**         | email                                                                                                        | testing mode, sender `onboarding@resend.dev` ⚠️ (assumed from instructions; user confirmed the email arrived)                                                                                                                                                                                                                                                      |
-| **GitHub Actions** | CI                                                                                                           | green on `cf1944a` ✅                                                                                                                                                                                                                                                                                                                                              |
+| **GitHub Actions** | CI                                                                                                           | green on `a4d698e` ✅                                                                                                                                                                                                                                                                                                                                              |
 
 **Environment variable names** (values are 🔒 and live only in the platforms / local `apps/api/.env`, which is git-ignored):
 
-- Railway (API): `BETTER_AUTH_SECRET` 🔒, `DATABASE_URL` 🔒, `WEB_ORIGIN` (= `https://sagarnu-bay.vercel.app`), `RESEND_API_KEY` 🔒, `EMAIL_FROM`, `REQUIRE_EMAIL_VERIFICATION` (= `false` for now), optional `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` 🔒, `MIGRATE_ON_START`, `LOG_LEVEL`. Railway sets `PORT`, `RAILWAY_GIT_COMMIT_SHA` itself. **Do not set `NODE_ENV`** on Railway (code defaults to production; setting it would make pnpm skip devDependencies at build).
-- Vercel (web): `API_URL` (= `https://sagarnu-production.up.railway.app`, must be public https; the build fails otherwise), optional `NEXT_PUBLIC_GOOGLE_ENABLED`. Must be enabled for the Production environment; changes need a Redeploy (rewrite target is fixed at build time).
+- Railway (API): `BETTER_AUTH_SECRET` 🔒, `DATABASE_URL` 🔒, `WEB_ORIGIN` (= `https://sagarnu-bay.vercel.app`), `RESEND_API_KEY` 🔒, `EMAIL_FROM`, `REQUIRE_EMAIL_VERIFICATION` (= `false` for now), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` 🔒 (set 2026-10-12), `MIGRATE_ON_START`, `LOG_LEVEL`. `RATE_LIMITS=false` exists only for E2E runs and is refused in production. Railway sets `PORT`, `RAILWAY_GIT_COMMIT_SHA` itself. **Do not set `NODE_ENV`** on Railway (code defaults to production; setting it would make pnpm skip devDependencies at build).
+- Vercel (web): `API_URL` (= `https://sagarnu-production.up.railway.app`, must be public https; the build fails otherwise), `NEXT_PUBLIC_GOOGLE_ENABLED=true` (set 2026-10-12), `NEXT_PUBLIC_GOOGLE_PUBLIC` (not set → Google shown as "בקרוב"; set `true` after publishing the Google app). Must be enabled for the Production environment; changes need a Redeploy (rewrite target is fixed at build time).
 - Local: `apps/api/.env` with `BETTER_AUTH_SECRET`, `WEB_ORIGIN=http://localhost:3000`, `DATABASE_URL=pglite:local`, `NODE_ENV=development`. Templates: `apps/api/.env.example`, `apps/web/.env.example`.
 - Future (not used yet): `GROQ_API_KEY`, `R2_*`, `WHATSAPP_*`.
 
@@ -235,10 +253,10 @@ In production the API refuses to start without a real `DATABASE_URL` and `WEB_OR
 
 ---
 
-## 9. Git status (✅ inspected 2026-10-11)
+## 9. Git status (✅ inspected 2026-10-13)
 
-- Branch: `main`, in sync with `origin/main`; this handoff file and the README are committed together with this update (the user asked to commit them).
-- HEAD before this docs commit: `cf1944a feat(web): account settings screen`.
+- Branch: `main`, in sync with `origin/main`, working tree clean before this docs update; README and this file are committed together with it.
+- HEAD before this docs commit: `a4d698e feat: Excel export of expenses; Google sign-in shown as "coming soon"`.
 - Git-ignored local files: `apps/api/.env`, `apps/web/next-env.d.ts`, `*.tsbuildinfo`, `.data/`, `datasets/contracts/examples/*` (except `.gitkeep`), `datasets/**/*.pdf`.
 
 ---
@@ -246,14 +264,14 @@ In production the API refuses to start without a real `DATABASE_URL` and `WEB_OR
 ## 10. Next steps (how to continue)
 
 1. **Re-read** `Future/FUTURE_WORK.txt` (the user may have added items, especially in section 8) and this file. Don't redo anything marked `[x]`.
-2. **Ask the user which item to take next.** Default proposal: remaining stage 1 items — i18n strings → Playwright E2E in repo — or phase 2 (AI contract analysis). (Domain purchase is the user's action; when done, follow the "דומיין ומיילים" checklist in FUTURE_WORK §6.)
+2. **Ask the user which item to take next.** Expect feedback from friends using the site. Default proposal: phase 2 (AI contract analysis) once the user answers the open decisions (category guess, where confidence/warnings live, event-date mismatch warning, VAT normalization). Branding is postponed; domain/Google publish is the user's action (checklist in §5 item 2).
 3. **Local run** (PowerShell, after the PATH refresh above):
    ```
    pnpm install
    pnpm dev            # or separately: cd apps/api; pnpm dev   and   cd apps/web; pnpm dev
    ```
    Web http://localhost:3000, API http://localhost:8080. Emails print in the API log.
-4. **Before each commit:** `pnpm check`; new DB columns → edit `packages/db/src/schema/*` then `pnpm --filter @sagarnu/db db:generate --name <change>` and commit the generated SQL + `meta/`.
+4. **Before each commit:** `pnpm check` (and `pnpm e2e` for UI changes); new DB columns → edit `packages/db/src/schema/*` then `pnpm --filter @sagarnu/db db:generate --name <change>` and commit the generated SQL + `meta/`.
 5. **After each push:** check CI (GitHub API curl), and for API/package changes check `https://sagarnu-production.up.railway.app/v1/health` shows the new short SHA.
-6. **Verify UI changes** in a real browser (playwright-core + Edge) at desktop and 390px width; look at screenshots.
+6. **Verify UI changes** with E2E specs and screenshots at desktop and 390px width (see Windows notes in §6).
 7. Mark finished FUTURE_WORK items `[x]`, commit + push per module.
