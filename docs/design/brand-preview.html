@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Playpen+Sans+Hebrew:wght@400;600;800&family=Rubik:wght@400;500;700;800&family=Noto+Serif+Hebrew:wght@200;300;600&family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #d9dbdf; padding: 24px; display: flex; gap: 20px; align-items: flex-start; }
+  .col { width: 430px; }
+  .tag { font: 600 14px "Noto Sans Hebrew"; color: #333; margin-bottom: 8px; }
+  .num { font-variant-numeric: tabular-nums; unicode-bidi: isolate; }
+  .screen { border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgb(0 0 0 / .15); }
+  .row { display: flex; justify-content: space-between; align-items: baseline; }
+
+  /* A – contract & ink */
+  .A { background: #F3F5F8; color: #161D2D; font-family: "IBM Plex Sans Hebrew"; padding: 18px; }
+  .A header { display: flex; justify-content: space-between; font-size: 13px; color: #545E70; margin-bottom: 16px; }
+  .A header b { font: 700 18px "Frank Ruhl Libre"; color: #161D2D; }
+  .A .sheet { background: #fff; border: 1px solid #DCE1E9; border-radius: 12px; padding: 18px;
+              box-shadow: 0 1px 2px oklch(23% .03 266 / .05), 0 10px 28px oklch(23% .03 266 / .06); }
+  .A .label { font-size: 13px; color: #545E70; }
+  .A .lead { font: 900 46px/1.1 "Frank Ruhl Libre"; margin: 4px 0 10px; }
+  .A .rule { height: 1px; background: #C8B08A; margin-bottom: 10px; }
+  .A .line { font-size: 15px; padding: 4px 0; }
+  .A .bar { height: 6px; background: #E9EDF3; border-radius: 3px; margin: 8px 0; }
+  .A .bar i { display: block; height: 100%; width: 21%; background: #2A3D78; border-radius: 3px; }
+  .A .ok { color: #1C6E47; font-size: 13px; font-weight: 600; }
+  .A .meta { font-size: 13px; color: #545E70; margin-top: 10px; }
+  .A .vendor { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .A .stamp { width: 74px; height: 74px; border: 2.5px solid #2A3D78; border-radius: 50%; color: #2A3D78; transform: rotate(-8deg);
+              display: grid; place-items: center; text-align: center; font: 700 17px/1 "Frank Ruhl Libre"; outline: 1px solid #2A3D78; outline-offset: -7px; }
+  .A .stamp small { display: block; font: 500 9px "IBM Plex Sans Hebrew"; margin-top: 3px; }
+  .A .btn { background: #2A3D78; color: #fff; border-radius: 8px; padding: 9px 16px; font-weight: 600; font-size: 14px; display: inline-block; margin-top: 14px; }
+
+  /* B – olive & pomegranate */
+  .B { background: #F0F2EA; color: #1D2117; font-family: "Rubik"; padding: 18px; }
+  .B header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .B header .names { font: 600 20px "Playpen Sans Hebrew"; color: #4B5A27; }
+  .B header .logo { font: 700 15px "Rubik"; }
+  .B .lead { font: 400 21px/1.35 "Rubik"; margin-bottom: 12px; }
+  .B .lead b { font-weight: 800; font-size: 32px; }
+  .B .seg { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: #E6E9DC; }
+  .B .seg i { display: block; }
+  .B .legend { display: flex; gap: 14px; font-size: 13px; color: #545A47; margin: 8px 0 14px; }
+  .B .ok { color: #3F5E1E; font-weight: 500; font-size: 14px; }
+  .B .card { background: #FCFDF9; border-radius: 22px; padding: 16px; margin-top: 12px;
+             box-shadow: 0 2px 6px rgb(29 33 23 / .06), 0 14px 30px rgb(75 90 39 / .08); }
+  .B .muted { color: #545A47; font-size: 14px; }
+  .B .sagarnu { font: 800 30px "Playpen Sans Hebrew"; color: #8C1D52; }
+  .B .seeds span { display: inline-block; width: 7px; height: 9px; border-radius: 50%; background: #8C1D52; margin-inline-start: 4px; transform: rotate(25deg); }
+  .B .btn { background: #4B5A27; color: #fff; border-radius: 999px; padding: 9px 18px; font-weight: 500; font-size: 14px; display: inline-block; margin-top: 10px; }
+
+  /* C – evergreen evening */
+  .C { background: #F3F6F4; color: #111C17; font-family: "Noto Sans Hebrew"; padding: 16px; font-size: 14px; }
+  .C header { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; color: #4F5D56; }
+  .C header b { color: #111C17; font-weight: 700; font-size: 15px; }
+  .C .band { background: #12392C; color: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 18px 40px rgb(18 57 44 / .18); }
+  .C .band .label { font-size: 12px; color: #B6E0CE; }
+  .C .band .lead { font: 200 52px/1.05 "Noto Serif Hebrew"; margin: 2px 0 8px; }
+  .C .foil { height: 1px; background: #CBB48C; width: 60%; margin-bottom: 10px; }
+  .C .band .line { font-size: 13px; padding: 2px 0; color: #E6EEEA; }
+  .C .band .sag { font: 300 20px "Noto Serif Hebrew"; color: #CBB48C; }
+  .C .timeline { margin: 16px 0 6px; position: relative; height: 26px; }
+  .C .timeline::before { content: ""; position: absolute; inset-inline: 0; top: 12px; height: 2px; background: #DAE2DD; }
+  .C .dot { position: absolute; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: #1D5B47; }
+  .C .table { background: #fff; border: 1px solid #DAE2DD; border-radius: 10px; }
+  .C .tr { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #DAE2DD; }
+  .C .tr:last-child { border-bottom: 0; }
+  .C .warn { color: #865000; font-weight: 600; }
+  .C .btn { background: #1D5B47; color: #fff; border-radius: 6px; padding: 7px 14px; font-weight: 600; font-size: 13px; display: inline-block; margin-top: 10px; }
+</style>
+</head>
+<body>
+  <div class="col">
+    <div class="tag">A – חוזה ודיו</div>
+    <div class="screen A">
+      <header><b>סגרנו</b><span>החתונה של מיכל ואורי</span></header>
+      <div class="sheet">
+        <div class="label">נותר לשלם</div>
+        <div class="lead num">75,000 ₪</div>
+        <div class="rule"></div>
+        <div class="row line"><span>התחייבנו</span><span class="num">95,000 ₪</span></div>
+        <div class="row line"><span>שולם</span><span class="num">20,000 ₪</span></div>
+        <div class="bar"><i></i></div>
+        <div class="row line"><span>יתרה בתקציב</span><span class="num">85,000 ₪</span></div>
+        <div class="ok">✓ בתוך התקציב</div>
+        <div class="meta">עוד 219 יום, 20 במאי 2027</div>
+        <div class="vendor">
+          <div><div style="font-weight:600">גני הוורדים</div><div class="label">שולם במלואו</div></div>
+          <div class="stamp"><div>סגרנו<small>13.05.2027</small></div></div>
+        </div>
+        <span class="btn">הוספת תשלום</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="tag">B – זית ורימון</div>
+    <div class="screen B">
+      <header><span class="logo">סגרנו</span><span class="names">מיכל ואורי</span></header>
+      <div class="lead">נשארו לכם <b class="num">75,000 ₪</b> לשלם עד החתונה</div>
+      <div class="seg"><i style="width:21%;background:#4B5A27"></i><i style="width:58%;background:#C2CC9E"></i></div>
+      <div class="legend"><span>שולם 20,000 ₪</span><span>נותר 75,000 ₪</span><span>יתרה 85,000 ₪</span></div>
+      <div class="ok">✓ אתם בתוך התקציב</div>
+      <div class="card">
+        <div class="row"><b>התשלום הקרוב</b><span class="muted">עד 13 במאי</span></div>
+        <div style="margin-top:6px">גני הוורדים, יתרה <b class="num">47,500 ₪</b></div>
+        <span class="btn">הוספת תשלום</span>
+      </div>
+      <div class="card" style="text-align:center">
+        <div class="sagarnu">סגרנו!</div>
+        <div class="seeds"><span></span><span></span><span></span></div>
+        <div class="muted" style="margin-top:6px">גני הוורדים נוספו לתקציב</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="tag">C – ערב ירוק-עד</div>
+    <div class="screen C">
+      <header><b>סגרנו</b><span>החתונה של מיכל ואורי</span></header>
+      <div class="band">
+        <div class="label">נותר לשלם</div>
+        <div class="lead num">75,000 ₪</div>
+        <div class="foil"></div>
+        <div class="row line"><span>התחייבנו</span><span class="num">95,000 ₪</span></div>
+        <div class="row line"><span>שולם</span><span class="num">20,000 ₪</span></div>
+        <div class="row line"><span>יתרה בתקציב</span><span class="num">85,000 ₪ ✓</span></div>
+        <div class="sag" style="margin-top:8px">סגרנו</div>
+      </div>
+      <div class="timeline"><span class="dot" style="inset-inline-start:0"></span><span class="dot" style="inset-inline-start:62%;background:#CBB48C"></span><span class="dot" style="inset-inline-end:0;background:#12392C"></span></div>
+      <div class="row" style="font-size:12px;color:#4F5D56;margin-bottom:12px"><span>היום</span><span>13/5 יתרה 47,500 ₪</span><span>20/5 החתונה</span></div>
+      <div class="table">
+        <div class="tr"><span>גני הוורדים</span><span class="num">95,000 ₪</span></div>
+        <div class="tr"><span>צלמי השמחה</span><span class="warn">במו״מ</span></div>
+        <div class="tr"><span>קייטרינג</span><span style="color:#4F5D56">עוד לא נסגר</span></div>
+      </div>
+      <span class="btn">הוספת תשלום</span>
+    </div>
+  </div>
+</body>
+</html>
